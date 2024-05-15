@@ -5,16 +5,16 @@ import starlightImageZoom from 'starlight-image-zoom';
 
 // https://astro.build/config
 export default defineConfig({
-	site: process.env.CI ? 'http://vinicioslugli.github.io' : 'http://localhost:4321',
+	site: process.env.CI ? 'https://crabrolls-cartesi.github.io' : 'http://localhost:4321',
 	base: '/crabrolls-cartesi/',
 	integrations: [
 		starlight({
 			title: 'CrabRolls',
 			social: {
-				github: 'https://github.com/ViniciosLugli/crabrolls-cartesi',
+				github: 'https://github.com/crabrolls-cartesi/crabrolls',
 			},
 			editLink: {
-				baseUrl: 'https://github.com/ViniciosLugli/crabrolls-cartesi/tree/main',
+				baseUrl: 'https://github.com/crabrolls-cartesi/crabrolls/tree/main',
 			},
 			logo: {
 				src: './src/assets/logo.png',

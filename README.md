@@ -19,7 +19,7 @@ This project aims to provide a high-level framework for developing Rust-based da
 
 # Documentation
 
-The complete documentation for this project is available at [vinicioslugli.github.io/crabrolls-cartesi/](https://vinicioslugli.github.io/crabrolls-cartesi/).
+The complete documentation for this project is available at [crabrolls-cartesi.github.io](https://crabrolls-cartesi.github.io).
 
 # Contributors
 
