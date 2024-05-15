@@ -1,0 +1,21 @@
+{
+	"name": "starlight-docs-template",
+	"type": "module",
+	"version": "0.0.1",
+	"scripts": {
+		"dev": "astro dev",
+		"start": "astro dev",
+		"build": "astro check && astro build",
+		"preview": "astro preview",
+		"astro": "astro"
+	},
+	"dependencies": {
+		"@astrojs/check": "^0.7.0",
+		"@astrojs/starlight": "^0.22.3",
+		"astro": "^4.8.3",
+		"sharp": "^0.33.3",
+		"starlight-image-zoom": "^0.4.0",
+		"starlight-links-validator": "^0.8.0",
+		"typescript": "^5.4.5"
+	}
+}

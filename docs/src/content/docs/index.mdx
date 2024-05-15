@@ -1,0 +1,43 @@
+---
+title: CrabRolls
+description: High level framework for Rust-based dapps on Cartesi machines.
+template: splash
+hero:
+    tagline: High level framework for Rust-based dapps on Cartesi machines!
+    image:
+        file: ../../assets/logo.png
+    actions:
+        - text: Get started
+          link: overview/introduction
+          icon: right-arrow
+          variant: primary
+        - text: See on GitHub
+          link: https://github.com/ViniciosLugli/crabrolls-cartesi
+          icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Features
+
+<CardGrid stagger>
+	<Card title="Rollup API Integration" icon="setting">
+		Full support for interacting with the [Rollups API](https://docs.cartesi.io/cartesi-rollups/api/) from Rust.
+	</Card>
+	<Card title="High-level Abstractions" icon="seti:rust">
+		Simplified interfaces for common tasks such as state management, event handling, and more.
+	</Card>
+	<Card title="Modular Design" icon="puzzle">
+		Flexible and extensible architecture for easy customization and extension.
+	</Card>
+	<Card title="Testing Suite" icon="approve-check">
+		Integrated tools for robust testing without requiring running a Cartesi machine, leveraging Rust's testing capabilities.
+	</Card>
+	<Card title="Project as a Crate" icon="seti:salesforce">
+		Easy distribution and installation through Rust’s build system and package manager with [cargo](https://doc.rust-lang.org/cargo/), deploying the framework as a crate on
+		[crates.io](https://crates.io/).
+	</Card>
+	<Card title="Comprehensive Documentation" icon="open-book">
+		Utilizing the tool [starlight](https://starlight.astro.build/) for documentation, including examples, guides, and API references.
+	</Card>
+</CardGrid>
