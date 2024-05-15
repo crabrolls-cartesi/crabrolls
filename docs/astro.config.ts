@@ -6,7 +6,7 @@ import starlightImageZoom from 'starlight-image-zoom';
 // https://astro.build/config
 export default defineConfig({
 	site: process.env.CI ? 'https://crabrolls-cartesi.github.io' : 'http://localhost:4321',
-	base: '/crabrolls-cartesi/',
+	base: '/crabrolls/',
 	integrations: [
 		starlight({
 			title: 'CrabRolls',
