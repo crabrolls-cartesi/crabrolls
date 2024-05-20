@@ -29,7 +29,8 @@ impl Application for EchoApp {
         _env: &impl Environment,
         _payload: Vec<u8>,
     ) -> Result<(), Box<dyn Error>> {
-        println!("Inspect method called with payload: {:?}", _payload);
+        let string_payload = String::from_utf8_lossy(&_payload);
+        println!("Inspect method called with payload: {:?}", string_payload);
         Ok(())
     }
 }

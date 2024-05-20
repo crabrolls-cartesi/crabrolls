@@ -92,7 +92,7 @@ impl Rollup {
         let response_status = response.status();
 
         if !response_status.is_success() {
-            return Err(Box::from("Failed to finish"));
+            return Err(Box::from("Failed to finish the current state"));
         } else if response_status == 202 {
             return Ok(None);
         }
@@ -100,16 +100,18 @@ impl Rollup {
         let value: serde_json::Value = response.json().await?;
         debug!("Received input: {:?}", value);
 
-        match value["request_type"]
+        let request_type = value["request_type"]
             .as_str()
-            .ok_or("Invalid request type")?
-        {
+            .ok_or("Invalid request type")?;
+        let data = value["data"].clone();
+
+        match request_type {
             "advance_state" => {
-                let advance_input = AdvanceInput::parse(value)?;
+                let advance_input: AdvanceInput = serde_json::from_value(data)?;
                 Ok(Some(AdvanceInputType::Advance(advance_input)))
             }
             "inspect_state" => {
-                let inspect_input = InspectInput::parse(value)?;
+                let inspect_input: InspectInput = serde_json::from_value(data)?;
                 Ok(Some(AdvanceInputType::Inspect(inspect_input)))
             }
             _ => Err(Box::from("Invalid request type")),
