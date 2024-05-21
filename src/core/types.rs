@@ -11,7 +11,7 @@ pub struct Metadata {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "lowercase", tag = "status")]
 pub enum FinishStatus {
     Accept,
     Reject,

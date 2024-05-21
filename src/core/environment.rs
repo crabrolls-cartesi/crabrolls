@@ -1,10 +1,9 @@
 use super::context::Context;
 use super::types::{AdvanceInput, AdvanceInputType, FinishStatus, InspectInput};
-use crate::utils::requests::{parse_response, send_post};
-use __serde_json::json;
+use crate::utils::requests::ClientWrapper;
 use ethers::prelude::*;
 use ethers::utils::*;
-use reqwest::Client;
+use serde_json::{json, Value};
 use std::error::Error;
 
 pub trait Environment {
@@ -29,15 +28,13 @@ pub trait Environment {
 }
 
 pub struct Rollup {
-    url: String,
-    client: Client,
+    client: ClientWrapper,
 }
 
 impl Rollup {
     pub fn new(url: String) -> Self {
         Self {
-            url,
-            client: Client::new(),
+            client: ClientWrapper::new(url),
         }
     }
 }
@@ -49,29 +46,29 @@ impl Environment for Rollup {
         destination: Address,
         payload: Vec<u8>,
     ) -> Result<i32, Box<dyn Error>> {
-        let request = serde_json::json!({
+        let request = json!({
             "destination": destination,
             "payload": hex::encode(payload),
         });
-        let response = send_post(&self.client, &self.url, "voucher", &request).await?;
-        let output: serde_json::Value = parse_response(response).await?;
+        let response = self.client.post("voucher", &request).await?;
+        let output: serde_json::Value = self.client.parse_response(response).await?;
         Ok(output["index"].as_i64().unwrap_or(0) as i32)
     }
 
     async fn send_notice(&self, _ctx: &Context, payload: Vec<u8>) -> Result<i32, Box<dyn Error>> {
-        let request = serde_json::json!({
+        let request = json!({
             "payload": hex::encode(payload),
         });
-        let response = send_post(&self.client, &self.url, "notice", &request).await?;
-        let output: serde_json::Value = parse_response(response).await?;
+        let response = self.client.post("notice", &request).await?;
+        let output: Value = self.client.parse_response(response).await?;
         Ok(output["index"].as_i64().unwrap_or(0) as i32)
     }
 
     async fn send_report(&self, _ctx: &Context, payload: Vec<u8>) -> Result<(), Box<dyn Error>> {
-        let request = serde_json::json!({
+        let request = json!({
             "payload": hex::encode(payload),
         });
-        send_post(&self.client, &self.url, "report", &request).await?;
+        self.client.post("report", &request).await?;
         Ok(())
     }
 }
@@ -82,13 +79,8 @@ impl Rollup {
         _ctx: &Context,
         status: FinishStatus,
     ) -> Result<Option<AdvanceInputType>, Box<dyn Error>> {
-        let response = send_post(
-            &self.client,
-            &self.url,
-            "finish",
-            &json!({"status": status}),
-        )
-        .await?;
+        let response = self.client.post("finish", &status).await?;
+
         let response_status = response.status();
 
         if !response_status.is_success() {
@@ -97,7 +89,7 @@ impl Rollup {
             return Ok(None);
         }
 
-        let value: serde_json::Value = response.json().await?;
+        let value: Value = response.json().await?;
         debug!("Received input: {:?}", value);
 
         let request_type = value["request_type"]
