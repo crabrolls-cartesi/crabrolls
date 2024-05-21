@@ -14,23 +14,24 @@ impl EchoApp {
 impl Application for EchoApp {
     async fn advance(
         &self,
-        _env: &impl Environment,
-        _metadata: Metadata,
-        _payload: Vec<u8>,
+        env: &impl Environment,
+        metadata: Metadata,
+        payload: Vec<u8>,
     ) -> Result<(), Box<dyn Error>> {
-        println!("Advance method called with metadata: {:?}", _metadata);
-        let string_payload = String::from_utf8_lossy(&_payload);
+        let string_payload = String::from_utf8_lossy(&payload);
         println!("Advance method called with payload: {:?}", string_payload);
+        env.send_notice(payload.clone()).await?;
+        env.send_report(payload.clone()).await?;
+        env.send_voucher(metadata.msg_sender, payload).await?;
         Ok(())
     }
 
     async fn inspect(
         &self,
-        _env: &impl Environment,
-        _payload: Vec<u8>,
+        env: &impl Environment,
+        payload: Vec<u8>,
     ) -> Result<(), Box<dyn Error>> {
-        let string_payload = String::from_utf8_lossy(&_payload);
-        println!("Inspect method called with payload: {:?}", string_payload);
+        env.send_report(payload).await?;
         Ok(())
     }
 }

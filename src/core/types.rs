@@ -1,8 +1,8 @@
-use crate::utils::parsers::deserialize_string_of_bytes;
+use crate::utils::parsers::deserializers::*;
 use ethers::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Metadata {
     pub input_index: i32,
     pub msg_sender: Address,
@@ -17,14 +17,14 @@ pub enum FinishStatus {
     Reject,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct AdvanceInput {
     pub metadata: Metadata,
     #[serde(deserialize_with = "deserialize_string_of_bytes")]
     pub payload: Vec<u8>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct InspectInput {
     #[serde(deserialize_with = "deserialize_string_of_bytes")]
     pub payload: Vec<u8>,
@@ -34,4 +34,23 @@ pub struct InspectInput {
 pub enum AdvanceInputType {
     Advance(AdvanceInput),
     Inspect(InspectInput),
+}
+
+#[derive(Serialize, Debug)]
+pub struct Voucher {
+    pub destination: Address,
+    #[serde(serialize_with = "serialize_bytes_as_string")]
+    pub payload: Vec<u8>,
+}
+
+#[derive(Serialize, Debug)]
+pub struct Notice {
+    #[serde(serialize_with = "serialize_bytes_as_string")]
+    pub payload: Vec<u8>,
+}
+
+#[derive(Serialize, Debug)]
+pub struct Report {
+    #[serde(serialize_with = "serialize_bytes_as_string")]
+    pub payload: Vec<u8>,
 }

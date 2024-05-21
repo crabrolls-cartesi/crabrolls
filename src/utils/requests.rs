@@ -1,6 +1,7 @@
 use reqwest::{Client, Response};
 use serde::{de::DeserializeOwned, Serialize};
 use std::error::Error;
+use std::fmt::Debug;
 
 pub struct ClientWrapper {
     client: Client,
@@ -15,7 +16,7 @@ impl ClientWrapper {
         }
     }
 
-    pub async fn post<T: Serialize>(
+    pub async fn post<T: Serialize + Debug>(
         &self,
         route: &str,
         request: &T,

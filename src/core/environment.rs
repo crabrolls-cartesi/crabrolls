@@ -1,28 +1,26 @@
 use super::context::Context;
-use super::types::{AdvanceInput, AdvanceInputType, FinishStatus, InspectInput};
+use super::types::{
+    AdvanceInput, AdvanceInputType, FinishStatus, InspectInput, Notice, Report, Voucher,
+};
 use crate::utils::requests::ClientWrapper;
-use ethers::prelude::*;
-use ethers::utils::*;
-use serde_json::{json, Value};
+use ethers::types::Address;
+use serde_json::Value;
 use std::error::Error;
 
 pub trait Environment {
     fn send_voucher(
         &self,
-        ctx: &Context,
         destination: Address,
         payload: Vec<u8>,
     ) -> impl std::future::Future<Output = Result<i32, Box<dyn Error>>> + Send;
 
     fn send_notice(
         &self,
-        ctx: &Context,
         payload: Vec<u8>,
     ) -> impl std::future::Future<Output = Result<i32, Box<dyn Error>>> + Send;
 
     fn send_report(
         &self,
-        ctx: &Context,
         payload: Vec<u8>,
     ) -> impl std::future::Future<Output = Result<(), Box<dyn Error>>> + Send;
 }
@@ -42,33 +40,28 @@ impl Rollup {
 impl Environment for Rollup {
     async fn send_voucher(
         &self,
-        _ctx: &Context,
         destination: Address,
         payload: Vec<u8>,
     ) -> Result<i32, Box<dyn Error>> {
-        let request = json!({
-            "destination": destination,
-            "payload": hex::encode(payload),
-        });
-        let response = self.client.post("voucher", &request).await?;
+        let voucher = Voucher {
+            destination,
+            payload,
+        };
+        let response = self.client.post("voucher", &voucher).await?;
         let output: serde_json::Value = self.client.parse_response(response).await?;
         Ok(output["index"].as_i64().unwrap_or(0) as i32)
     }
 
-    async fn send_notice(&self, _ctx: &Context, payload: Vec<u8>) -> Result<i32, Box<dyn Error>> {
-        let request = json!({
-            "payload": hex::encode(payload),
-        });
-        let response = self.client.post("notice", &request).await?;
+    async fn send_notice(&self, payload: Vec<u8>) -> Result<i32, Box<dyn Error>> {
+        let notice = Notice { payload };
+        let response = self.client.post("notice", &notice).await?;
         let output: Value = self.client.parse_response(response).await?;
         Ok(output["index"].as_i64().unwrap_or(0) as i32)
     }
 
-    async fn send_report(&self, _ctx: &Context, payload: Vec<u8>) -> Result<(), Box<dyn Error>> {
-        let request = json!({
-            "payload": hex::encode(payload),
-        });
-        self.client.post("report", &request).await?;
+    async fn send_report(&self, payload: Vec<u8>) -> Result<(), Box<dyn Error>> {
+        let report = Report { payload };
+        self.client.post("report", &report).await?;
         Ok(())
     }
 }
