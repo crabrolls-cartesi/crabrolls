@@ -1,4 +1,3 @@
-use super::context::Context;
 use super::types::{
     AdvanceInput, AdvanceInputType, FinishStatus, InspectInput, Notice, Report, Voucher,
 };
@@ -69,7 +68,6 @@ impl Environment for Rollup {
 impl Rollup {
     pub async fn finish_and_get_next(
         &self,
-        _ctx: &Context,
         status: FinishStatus,
     ) -> Result<Option<AdvanceInputType>, Box<dyn Error>> {
         let response = self.client.post("finish", &status).await?;

@@ -3,44 +3,11 @@ use super::environment::Rollup;
 use super::types::{AdvanceInputType, FinishStatus};
 use std::error::Error;
 
-use std::sync::Arc;
-use tokio::time::{sleep, Duration};
-use tokio_util::sync::CancellationToken;
-
-#[derive(Clone)]
-pub struct Context {
-    cancellation_token: Arc<CancellationToken>,
-}
-
-impl Context {
-    pub fn new() -> Self {
-        Self {
-            cancellation_token: Arc::new(CancellationToken::new()),
-        }
-    }
-
-    pub fn with_timeout(duration: Duration) -> Self {
-        let ctx = Self::new();
-        let cancellation_token = ctx.cancellation_token.clone();
-
-        tokio::spawn(async move {
-            sleep(duration).await;
-            cancellation_token.cancel();
-        });
-
-        ctx
-    }
-
-    pub async fn done(&self) {
-        self.cancellation_token.cancelled().await;
-    }
-}
-
-pub struct RunOpts {
+pub struct RunOptions {
     pub rollup_url: String,
 }
 
-impl Default for RunOpts {
+impl Default for RunOptions {
     fn default() -> Self {
         Self {
             rollup_url: "http://127.0.0.1:5004".to_string(),
@@ -48,22 +15,26 @@ impl Default for RunOpts {
     }
 }
 
-pub async fn run(app: impl Application) -> Result<(), Box<dyn Error>> {
+impl RunOptions {
+    pub fn new(rollup_url: String) -> Self {
+        Self { rollup_url }
+    }
+}
+
+pub async fn run(app: impl Application, options: RunOptions) -> Result<(), Box<dyn Error>> {
     pretty_env_logger::init();
 
-    let opts = RunOpts::default();
-    let ctx = Context::new();
-    let rollup = Rollup::new(opts.rollup_url.clone());
+    let rollup = Rollup::new(options.rollup_url.clone());
 
     let status = FinishStatus::Accept;
 
-    info!(
+    println!(
         "Starting the application... Listening for inputs on {}",
-        opts.rollup_url
+        options.rollup_url
     );
 
     loop {
-        let input = rollup.finish_and_get_next(&ctx, status.clone()).await?;
+        let input = rollup.finish_and_get_next(status.clone()).await?;
 
         match input {
             Some(AdvanceInputType::Advance(advance_input)) => {

@@ -5,4 +5,9 @@ extern crate log;
 mod core;
 mod utils;
 
-pub use core::{application::Application, context::run, environment::Environment, types::Metadata};
+pub use core::{
+    application::Application,
+    context::{run, RunOptions},
+    environment::Environment,
+    types::Metadata,
+};
