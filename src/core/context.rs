@@ -10,7 +10,7 @@ pub struct RunOptions {
 impl Default for RunOptions {
     fn default() -> Self {
         Self {
-            rollup_url: "http://127.0.0.1:5004".to_string(),
+            rollup_url: String::from("http://127.0.0.1:5004"),
         }
     }
 }
