@@ -1,6 +1,4 @@
-use super::types::{
-    AdvanceInput, AdvanceInputType, FinishStatus, InspectInput, Notice, Report, Voucher,
-};
+use super::types::{Advance, FinishStatus, Input, Inspect, Output};
 use crate::utils::requests::ClientWrapper;
 use ethers::types::Address;
 use serde_json::Value;
@@ -42,7 +40,7 @@ impl Environment for Rollup {
         destination: Address,
         payload: Vec<u8>,
     ) -> Result<i32, Box<dyn Error>> {
-        let voucher = Voucher {
+        let voucher = Output::Voucher {
             destination,
             payload,
         };
@@ -52,14 +50,14 @@ impl Environment for Rollup {
     }
 
     async fn send_notice(&self, payload: Vec<u8>) -> Result<i32, Box<dyn Error>> {
-        let notice = Notice { payload };
+        let notice = Output::Notice { payload };
         let response = self.client.post("notice", &notice).await?;
         let output: Value = self.client.parse_response(response).await?;
         Ok(output["index"].as_i64().unwrap_or(0) as i32)
     }
 
     async fn send_report(&self, payload: Vec<u8>) -> Result<(), Box<dyn Error>> {
-        let report = Report { payload };
+        let report = Output::Report { payload };
         self.client.post("report", &report).await?;
         Ok(())
     }
@@ -69,7 +67,7 @@ impl Rollup {
     pub async fn finish_and_get_next(
         &self,
         status: FinishStatus,
-    ) -> Result<Option<AdvanceInputType>, Box<dyn Error>> {
+    ) -> Result<Option<Input>, Box<dyn Error>> {
         let response = self.client.post("finish", &status).await?;
 
         let response_status = response.status();
@@ -90,12 +88,12 @@ impl Rollup {
 
         match request_type {
             "advance_state" => {
-                let advance_input: AdvanceInput = serde_json::from_value(data)?;
-                Ok(Some(AdvanceInputType::Advance(advance_input)))
+                let advance_input: Advance = serde_json::from_value(data)?;
+                Ok(Some(Input::Advance(advance_input)))
             }
             "inspect_state" => {
-                let inspect_input: InspectInput = serde_json::from_value(data)?;
-                Ok(Some(AdvanceInputType::Inspect(inspect_input)))
+                let inspect_input: Inspect = serde_json::from_value(data)?;
+                Ok(Some(Input::Inspect(inspect_input)))
             }
             _ => Err(Box::from("Invalid request type")),
         }

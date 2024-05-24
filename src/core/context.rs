@@ -1,6 +1,6 @@
 use super::application::Application;
 use super::environment::Rollup;
-use super::types::{AdvanceInputType, FinishStatus};
+use super::types::{FinishStatus, Input};
 use std::error::Error;
 
 pub struct RunOptions {
@@ -37,7 +37,7 @@ pub async fn run(app: impl Application, options: RunOptions) -> Result<(), Box<d
         let input = rollup.finish_and_get_next(status.clone()).await?;
 
         match input {
-            Some(AdvanceInputType::Advance(advance_input)) => {
+            Some(Input::Advance(advance_input)) => {
                 debug!("Advance input: {:?}", advance_input);
                 if let Err(e) = app
                     .advance(&rollup, advance_input.metadata, advance_input.payload)
@@ -47,7 +47,7 @@ pub async fn run(app: impl Application, options: RunOptions) -> Result<(), Box<d
                     return Err(e);
                 }
             }
-            Some(AdvanceInputType::Inspect(inspect_input)) => {
+            Some(Input::Inspect(inspect_input)) => {
                 debug!("Inspect input: {:?}", inspect_input);
                 if let Err(e) = app.inspect(&rollup, inspect_input.payload).await {
                     error!("Error in inspect: {}", e);
