@@ -9,5 +9,5 @@ pub use core::{
     application::Application,
     context::{run, RunOptions},
     environment::Environment,
-    types::Metadata,
+    types::{FinishStatus, Metadata},
 };

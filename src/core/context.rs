@@ -26,7 +26,7 @@ pub async fn run(app: impl Application, options: RunOptions) -> Result<(), Box<d
 
     let rollup = Rollup::new(options.rollup_url.clone());
 
-    let status = FinishStatus::Accept;
+    let mut status = FinishStatus::Accept;
 
     println!(
         "Starting the application... Listening for inputs on {}",
@@ -39,12 +39,18 @@ pub async fn run(app: impl Application, options: RunOptions) -> Result<(), Box<d
         match input {
             Some(Input::Advance(advance_input)) => {
                 debug!("Advance input: {:?}", advance_input);
-                if let Err(e) = app
+                match app
                     .advance(&rollup, advance_input.metadata, advance_input.payload)
                     .await
                 {
-                    error!("Error in advance: {}", e);
-                    return Err(e);
+                    Ok(result_status) => {
+                        debug!("Advance status: {:?}", result_status);
+                        status = result_status;
+                    }
+                    Err(e) => {
+                        error!("Error in advance: {}", e);
+                        return Err(e);
+                    }
                 }
             }
             Some(Input::Inspect(inspect_input)) => {

@@ -1,7 +1,7 @@
 use std::error::Error;
 use tokio;
 extern crate crabrolls;
-use crabrolls::{run, Application, Environment, Metadata, RunOptions};
+use crabrolls::{run, Application, Environment, FinishStatus, Metadata, RunOptions};
 
 struct EchoApp;
 
@@ -17,22 +17,22 @@ impl Application for EchoApp {
         env: &impl Environment,
         metadata: Metadata,
         payload: Vec<u8>,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<FinishStatus, Box<dyn Error>> {
         let string_payload = String::from_utf8_lossy(&payload);
         println!("Advance method called with payload: {:?}", string_payload);
         env.send_notice(payload.clone()).await?;
         env.send_report(payload.clone()).await?;
         env.send_voucher(metadata.msg_sender, payload).await?;
-        Ok(())
+        Ok(FinishStatus::Accept)
     }
 
     async fn inspect(
         &self,
         env: &impl Environment,
         payload: Vec<u8>,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<FinishStatus, Box<dyn Error>> {
         env.send_report(payload).await?;
-        Ok(())
+        Ok(FinishStatus::Accept)
     }
 }
 
