@@ -49,15 +49,21 @@ pub async fn run(app: impl Application, options: RunOptions) -> Result<(), Box<d
                     }
                     Err(e) => {
                         error!("Error in advance: {}", e);
-                        return Err(e);
+                        status = FinishStatus::Reject;
                     }
                 }
             }
             Some(Input::Inspect(inspect_input)) => {
                 debug!("Inspect input: {:?}", inspect_input);
-                if let Err(e) = app.inspect(&rollup, inspect_input.payload).await {
-                    error!("Error in inspect: {}", e);
-                    return Err(e);
+                match app.inspect(&rollup, inspect_input.payload).await {
+                    Ok(result_status) => {
+                        debug!("Inspect status: {:?}", result_status);
+                        status = result_status;
+                    }
+                    Err(e) => {
+                        error!("Error in inspect: {}", e);
+                        status = FinishStatus::Reject;
+                    }
                 }
             }
             None => {
