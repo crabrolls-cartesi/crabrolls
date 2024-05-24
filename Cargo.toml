@@ -1,6 +1,6 @@
 [package]
 name = "crabrolls"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 author = "ViniciosLugli <vinicioslugli@gmail.com>"
 description = "High level framework for Rust-based dapps on Cartesi machines"
