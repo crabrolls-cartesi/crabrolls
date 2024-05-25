@@ -6,14 +6,7 @@ description = "High level framework for Rust-based dapps on Cartesi machines"
 repository = "https://github.com/crabrolls-cartesi/crabrolls"
 include = ["**/*.rs", "Cargo.toml"]
 license-file = "LICENSE"
-keywords = [
-	"cartesi",
-	"dapp",
-	"blockchain",
-	"rust",
-	"framework",
-	"smart-contract",
-]
+keywords = ["cartesi", "dapp", "blockchain", "rust", "high-level"]
 
 [dependencies]
 reqwest = { version = "0.12.4", features = ["json", "rustls-tls"] }
