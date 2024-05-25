@@ -1,4 +1,3 @@
-use log::kv::Value;
 use serde::Serialize;
 use std::error::Error;
 use std::fmt::Debug;
