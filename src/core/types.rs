@@ -1,5 +1,4 @@
-use crate::utils::parsers::deserializers::*;
-use ethers::prelude::*;
+use crate::{types::address::Address, utils::parsers::deserializers::*};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug)]

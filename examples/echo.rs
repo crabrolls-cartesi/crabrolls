@@ -1,6 +1,6 @@
 use std::error::Error;
-use tokio;
 extern crate crabrolls;
+use async_std::prelude::*;
 use crabrolls::{run, Application, Environment, FinishStatus, Metadata, RunOptions};
 
 struct EchoApp;
@@ -36,9 +36,11 @@ impl Application for EchoApp {
     }
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+#[async_std::main]
+async fn main() {
+    let app = EchoApp::new();
     let options = RunOptions::default();
-
-    run(EchoApp::new(), options).await
+    if let Err(e) = run(app, options).await {
+        eprintln!("Error: {}", e);
+    }
 }

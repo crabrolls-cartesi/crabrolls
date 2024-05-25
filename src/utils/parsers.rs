@@ -6,7 +6,6 @@ macro_rules! address {
 }
 
 pub mod deserializers {
-    use ethers::utils::hex;
     use serde::{Deserialize, Deserializer};
 
     pub fn deserialize_string_of_bytes<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>

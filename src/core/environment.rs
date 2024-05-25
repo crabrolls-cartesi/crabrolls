@@ -1,6 +1,5 @@
 use super::types::{Advance, FinishStatus, Input, Inspect, Output};
-use crate::utils::requests::ClientWrapper;
-use ethers::types::Address;
+use crate::{types::address::Address, utils::requests::ClientWrapper};
 use serde_json::Value;
 use std::error::Error;
 
@@ -72,13 +71,13 @@ impl Rollup {
 
         let response_status = response.status();
 
-        if !response_status.is_success() {
+        if response_status != 200 && response_status != 202 {
             return Err(Box::from("Failed to finish the current state"));
         } else if response_status == 202 {
             return Ok(None);
         }
 
-        let value: Value = response.json().await?;
+        let value: Value = self.client.parse_response(response).await?;
         debug!("Received input: {:?}", value);
 
         let request_type = value["request_type"]

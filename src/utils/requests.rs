@@ -1,35 +1,33 @@
-use reqwest::{Client, Response};
-use serde::{de::DeserializeOwned, Serialize};
+use log::kv::Value;
+use serde::Serialize;
 use std::error::Error;
 use std::fmt::Debug;
+use ureq;
 
 pub struct ClientWrapper {
-    client: Client,
     base_url: String,
 }
 
 impl ClientWrapper {
     pub fn new(base_url: String) -> Self {
-        Self {
-            client: Client::new(),
-            base_url,
-        }
+        Self { base_url }
     }
 
     pub async fn post<T: Serialize + Debug>(
         &self,
         route: &str,
         request: &T,
-    ) -> Result<Response, reqwest::Error> {
-        let endpoint = format!("{}/{}", self.base_url, route);
-        self.client.post(&endpoint).json(request).send().await
+    ) -> Result<ureq::Response, Box<dyn Error>> {
+        let url = format!("{}/{}", self.base_url, route);
+        let response = ureq::post(&url).send_json(serde_json::to_value(request)?)?;
+        Ok(response)
     }
 
-    pub async fn parse_response<T: DeserializeOwned>(
+    pub async fn parse_response(
         &self,
-        response: Response,
-    ) -> Result<T, Box<dyn Error>> {
-        let body = response.json::<T>().await?;
-        Ok(body)
+        response: ureq::Response,
+    ) -> Result<serde_json::Value, Box<dyn Error>> {
+        let response_json: serde_json::Value = response.into_json()?;
+        Ok(response_json)
     }
 }
