@@ -2,11 +2,9 @@
 name = "crabrolls"
 version = "1.0.0"
 edition = "2021"
-author = "ViniciosLugli <vinicioslugli@gmail.com>"
 description = "High level framework for Rust-based dapps on Cartesi machines"
 repository = "https://github.com/crabrolls-cartesi/crabrolls"
 include = ["**/*.rs", "Cargo.toml"]
-license = "Apache-2.0"
 license-file = "LICENSE"
 keywords = [
 	"cartesi",
