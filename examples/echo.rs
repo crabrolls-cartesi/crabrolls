@@ -1,6 +1,5 @@
 use std::error::Error;
 extern crate crabrolls;
-use async_std::prelude::*;
 use crabrolls::{run, Application, Environment, FinishStatus, Metadata, RunOptions};
 
 struct EchoApp;
@@ -42,5 +41,58 @@ async fn main() {
     let options = RunOptions::default();
     if let Err(e) = run(app, options).await {
         eprintln!("Error: {}", e);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crabrolls::{Address, Output, Tester};
+
+    #[async_std::test]
+    async fn test_echo() {
+        let app = EchoApp::new();
+        let tester = Tester::new(app);
+
+        let address = Address::default();
+
+        let payload = b"Hi Crabrolls!".to_vec();
+        let result = tester.advance(address, payload.clone()).await;
+
+        assert_eq!(
+            result.status,
+            FinishStatus::Accept,
+            "Expected Accept status"
+        );
+
+        assert_eq!(
+            result.error, None,
+            "Expected no error, got {:?}",
+            result.error
+        );
+
+        assert_eq!(
+            result.outputs.len(),
+            3,
+            "Expected 3 outputs, got {}",
+            result.outputs.len()
+        );
+
+        assert_eq!(
+            result.outputs,
+            vec![
+                Output::Notice {
+                    payload: payload.clone()
+                },
+                Output::Report {
+                    payload: payload.clone()
+                },
+                Output::Voucher {
+                    destination: address,
+                    payload: payload.clone()
+                }
+            ],
+            "Expected outputs to match"
+        );
     }
 }

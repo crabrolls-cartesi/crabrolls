@@ -10,5 +10,10 @@ pub use core::{
     application::Application,
     context::{run, RunOptions},
     environment::Environment,
-    types::{FinishStatus, Metadata},
+    testing::Tester,
+};
+
+pub use types::{
+    address::Address,
+    machine::{FinishStatus, Metadata, Output},
 };

@@ -1,6 +1,6 @@
 use super::application::Application;
 use super::environment::Rollup;
-use super::types::{FinishStatus, Input};
+use crate::types::machine::{FinishStatus, Input};
 use std::error::Error;
 
 pub struct RunOptions {

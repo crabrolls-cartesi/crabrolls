@@ -1,24 +1,25 @@
-use super::types::{Advance, FinishStatus, Input, Inspect, Output};
+use crate::types::machine::{Advance, FinishStatus, Input, Inspect, Output};
 use crate::{types::address::Address, utils::requests::ClientWrapper};
 use serde_json::Value;
 use std::error::Error;
+use std::future::Future;
 
 pub trait Environment {
     fn send_voucher(
         &self,
         destination: Address,
         payload: Vec<u8>,
-    ) -> impl std::future::Future<Output = Result<i32, Box<dyn Error>>> + Send;
+    ) -> impl Future<Output = Result<i32, Box<dyn Error>>> + Send;
 
     fn send_notice(
         &self,
         payload: Vec<u8>,
-    ) -> impl std::future::Future<Output = Result<i32, Box<dyn Error>>> + Send;
+    ) -> impl Future<Output = Result<i32, Box<dyn Error>>> + Send;
 
     fn send_report(
         &self,
         payload: Vec<u8>,
-    ) -> impl std::future::Future<Output = Result<(), Box<dyn Error>>> + Send;
+    ) -> impl Future<Output = Result<(), Box<dyn Error>>> + Send;
 }
 
 pub struct Rollup {

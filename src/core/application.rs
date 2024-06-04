@@ -1,6 +1,6 @@
 use super::environment::Environment;
-use super::types::{FinishStatus, Metadata};
-use std::error::Error;
+use crate::types::machine::{FinishStatus, Metadata};
+use std::{error::Error, future::Future};
 
 pub trait Application {
     fn advance(
@@ -8,11 +8,11 @@ pub trait Application {
         env: &impl Environment,
         metadata: Metadata,
         payload: Vec<u8>,
-    ) -> impl std::future::Future<Output = Result<FinishStatus, Box<dyn Error>>>;
+    ) -> impl Future<Output = Result<FinishStatus, Box<dyn Error>>>;
 
     fn inspect(
         &self,
         env: &impl Environment,
         payload: Vec<u8>,
-    ) -> impl std::future::Future<Output = Result<FinishStatus, Box<dyn Error>>>;
+    ) -> impl Future<Output = Result<FinishStatus, Box<dyn Error>>>;
 }

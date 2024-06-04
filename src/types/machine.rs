@@ -1,7 +1,7 @@
 use crate::{types::address::Address, utils::parsers::deserializers::*};
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Metadata {
     pub input_index: i32,
     pub msg_sender: Address,
@@ -9,7 +9,7 @@ pub struct Metadata {
     pub timestamp: i64,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq)]
 #[serde(rename_all = "lowercase", tag = "status")]
 pub enum FinishStatus {
     Accept,
@@ -35,7 +35,7 @@ pub enum Input {
     Inspect(Inspect),
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone, PartialEq)]
 #[serde(untagged)]
 pub enum Output {
     Voucher {
