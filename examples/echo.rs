@@ -65,11 +65,7 @@ mod tests {
             "Expected Accept status"
         );
 
-        assert_eq!(
-            result.error, None,
-            "Expected no error, got {:?}",
-            result.error
-        );
+        assert!(result.error.is_none(), "Expected no error");
 
         assert_eq!(
             result.outputs.len(),
