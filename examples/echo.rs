@@ -1,6 +1,5 @@
-use std::error::Error;
-extern crate crabrolls;
 use crabrolls::prelude::*;
+use std::error::Error;
 
 struct EchoApp;
 
