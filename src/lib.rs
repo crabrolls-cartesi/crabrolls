@@ -6,14 +6,20 @@ mod core;
 mod types;
 mod utils;
 
-pub use core::{
-    application::Application,
-    context::{run, RunOptions},
-    environment::Environment,
-    testing::Tester,
-};
+pub use core::{application::Application, environment::Environment};
 
-pub use types::{
-    address::Address,
-    machine::{FinishStatus, Metadata, Output},
-};
+pub use types::machine::{FinishStatus, Metadata, Output};
+
+pub mod prelude {
+    pub use crate::core::{
+        application::Application,
+        context::{run, RunOptions},
+        environment::Environment,
+        testing::Tester,
+    };
+
+    pub use crate::types::{
+        address::Address,
+        machine::{FinishStatus, Metadata, Output},
+    };
+}

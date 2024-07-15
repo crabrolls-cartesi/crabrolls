@@ -1,6 +1,6 @@
 use std::error::Error;
 extern crate crabrolls;
-use crabrolls::{run, Application, Environment, FinishStatus, Metadata, RunOptions};
+use crabrolls::prelude::*;
 
 struct EchoApp;
 
@@ -46,8 +46,8 @@ async fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crabrolls::{Address, Output, Tester};
+    use super::EchoApp;
+    use crabrolls::prelude::*;
 
     #[async_std::test]
     async fn test_echo() {
