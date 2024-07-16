@@ -1,0 +1,184 @@
+---
+title: JSON Blog Application
+description: A simple blog application that manages posts using JSON-based inputs.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside>See the [New Project or Example](../../new-project) guide to learn how to run the examples or how to start a new project.</Aside>
+
+## Overview
+
+The JSON Blog application is a straightforward implementation that demonstrates how to manage blog posts using JSON-based inputs in the Crabrolls framework. It allows you to add, update, and delete posts. This document outlines how to use the JSON Blog application, including sending inputs and inspecting outputs. You can find the source code of the Echo application in the [CrabRolls repository](https://github.com/crabrolls-cartesi/crabrolls/blob/main/examples/blog.rs).
+
+## Usage
+
+With the application running, you can manage blog posts by sending JSON-encoded messages. These messages can be sent using the `send` command of the [Cartesi CLI](https://github.com/cartesi/cli) tool. The following examples demonstrate how to send different types of messages to the JSON Blog application.
+
+<Aside>All the highlighted text in the json templates below should be replaced with the actual values you want to use.</Aside>
+
+### Adding a New Post
+
+To add a new post, use the following JSON input:
+
+```json title="Template" "AddPost" "A new post" "My content of the post!"
+{
+	"kind": "AddPost",
+	"payload": {
+		"title": "A new post",
+		"content": "My content of the post!"
+	}
+}
+```
+
+Send this input using the `send` command:
+
+```bash title="Terminal" "AddPost" "A new post" "My content of the post!"
+cartesi send generic --input='{
+  "kind": "AddPost",
+  "payload": {
+    "title": "A new post",
+    "content": "My content of the post!"
+  }
+}'
+```
+
+### Updating an Existing Post
+
+To update an existing post, use the following JSON input:
+
+```json title="Template" "UpdatePost" "1" "Updated post!" "My updated content!"
+{
+	"kind": "UpdatePost",
+	"payload": {
+		"id": 1,
+		"title": "Updated post!",
+		"content": "My updated content!"
+	}
+}
+```
+
+Send this input using the `send` command:
+
+```bash title="Terminal" "UpdatePost" "1" "Updated post!" "My updated content!"
+cartesi send generic --input='{
+  "kind": "UpdatePost",
+  "payload": {
+    "id": 1,
+    "title": "Updated post!",
+    "content": "My updated content!"
+  }
+}'
+```
+
+### Deleting a Post
+
+To delete a post, use the following JSON input:
+
+```json title="Template" "DeletePost" "1"
+{
+	"kind": "DeletePost",
+	"payload": {
+		"id": 1
+	}
+}
+```
+
+Send this input using the `send` command:
+
+```bash title="Terminal" "DeletePost" "1"
+cartesi send generic --input='{
+  "kind": "DeletePost",
+  "payload": {
+    "id": 1
+  }
+}'
+```
+
+## Inspecting Posts
+
+You can get all the posts stored in the application by inspecting the cartesian state. The following example demonstrates how to get the outputs of the application:
+
+```bash title="Terminal"
+curl 'http://localhost:8080/inspect/state' | jq
+```
+
+Which will return response like this:
+
+```json title="Response" /0x[0-9a-fA-F]{2,}/
+{
+	"exception_payload": "0x",
+	"processed_input_count": 1,
+	"reports": [
+		{
+			"payload": "0x5b7b226964223a312c227469746c65223a2241206e657720706f7374222c22636f6e74656e74223a224d7920636f6e74656e74206f662074686520706f737421227d5d"
+		}
+	],
+	"status": "Accepted"
+}
+```
+
+Now you can see the posts stored in the application by decoding the payload of the report using the command:
+
+```bash title="Terminal" /0x[0-9a-fA-F]{2,}/
+echo "0x5b7b226964223a312c227469746c65223a2241206e657720706f7374222c22636f6e74656e74223a224d7920636f6e74656e74206f662074686520706f737421227d5d" | xxd -r -p | jq
+```
+
+This will return the posts stored in the application:
+
+```json title="Response"
+[
+	{
+		"id": 1,
+		"title": "A new post",
+		"content": "My content of the post!"
+	}
+]
+```
+
+## Inspecting Changes
+
+The app send a notice of all the changes made to the state, so you can also inspect the notices to see the changes made to the state. The following command demonstrates how to get the notices of the application:
+
+```bash title="Terminal" /{"query":".*"}/
+curl 'http://localhost:8080/graphql' -H 'Content-Type: application/json' -d '{"query":"query getLastNotices { inputs(last: 1) { edges { node { notices(last: 1) { edges { node { index payload } } } } } } }"}' | jq
+```
+
+Now you can see the last notices of the application, including the changes made to the state:
+
+```json title="Response" /0x[0-9a-fA-F]{2,}/
+{
+	"data": {
+		"inputs": {
+			"edges": [
+				{
+					"node": {
+						"notices": {
+							"edges": [
+								{
+									"node": {
+										"index": 0,
+										"payload": "0x22416464656420706f73743a2041206e657720706f737422"
+									}
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	}
+}
+```
+
+Decoding the payload of the notice will return the changes made to the state:
+
+```bash title="Terminal" /0x[0-9a-fA-F]{2,}/
+echo "0x22416464656420706f73743a2041206e657720706f737422" | xxd -r -p
+```
+
+This will return the changes made to the state:
+
+```json title="Response"
+"Added post: A new post"
+```

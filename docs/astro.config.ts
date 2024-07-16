@@ -25,6 +25,10 @@ export default defineConfig({
 					label: 'Overview',
 					autogenerate: { directory: 'overview' },
 				},
+				{
+					label: 'Getting Started',
+					autogenerate: { directory: 'getting-started' },
+				},
 			],
 			pagination: true,
 			plugins: [

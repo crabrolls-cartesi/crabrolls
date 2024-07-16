@@ -4,4 +4,6 @@ target/
 Cargo.lock
 **/*.rs.bk
 *.pdb
+
+# Temp files
 temp.md

@@ -1,0 +1,67 @@
+---
+title: Creating a new Project
+description: About how to create a new project or example using CrabRolls.+
+sidebar:
+    order: 0
+---
+
+In this guide, you will learn how to create a new project or example using CrabRolls! This guide will help you set up your environment and create a new project or example.
+
+## Prerequisites
+
+To start and run a new project or example using CrabRolls, you need a few tools and dependencies. This guide will help you set up your environment and create a new project or example using CrabRolls.
+
+-   [Unix-like operating system](https://en.wikipedia.org/wiki/Unix-like) or [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install)
+    -   [Rust](https://www.rust-lang.org/tools/install)
+    -   [Docker](https://docs.docker.com/get-docker/)
+    -   [Foundry](https://book.getfoundry.sh/getting-started/installation)
+    -   [node.js and npm](https://nodejs.org/en/download/)
+        -   [Cartesi CLI](https://www.npmjs.com/package/@cartesi/cli)
+        -   [Nonodo CLI](https://www.npmjs.com/package/nonodo) (optional, but recommended for development)
+
+## From template
+
+import { Steps } from '@astrojs/starlight/components';
+
+Current we have a template to create a new project or example using CrabRolls, available in the [CrabRolls template repository](https://github.com/crabrolls-cartesi/template), this template are a `echo` example, and you can see more information about it in the [Echo example](../examples/echo) documentation. To use the template, you can follow the steps below:
+
+<Steps>
+
+1.  Clone the template repository:
+
+    ```bash title="Terminal"
+    git clone git@github.com:crabrolls-cartesi/template.git
+    ```
+
+2.  Enter the template directory:
+
+    ```bash title="Terminal"
+    cd template
+    ```
+
+3.  Now you can use the [Cartesi CLI](https://www.npmjs.com/package/@cartesi/cli) to run the application:
+
+    Firts you need to build the project:
+
+    ```bash title="Terminal"
+    cartesi build
+    ```
+
+    And then you can run the project:
+
+    ```bash title="Terminal"
+    cartesi run
+    ```
+
+</Steps>
+
+## Using examples
+
+This project has a collection of examples that demonstrate how to use high-level features of CrabRolls. Each example is a standalone project that can be run independently. All the examples code is available in the [CrabRolls repository](https://github.com/crabrolls-cartesi/crabrolls/tree/main/examples) and the use of each example is documented in the `examples` section of this documentation. Current available examples are:
+
+-   [Echo](../examples/echo)
+-   [JSON Blog](../examples/json)
+
+```
+
+```

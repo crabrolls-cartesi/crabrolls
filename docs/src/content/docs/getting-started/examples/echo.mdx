@@ -1,0 +1,86 @@
+---
+title: Echo
+description: A simple echo application that sends back the received message.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside>See the [New Project or Example](../../new-project) guide to learn how to run the examples or how to start a new project.</Aside>
+
+## Overview
+
+The Echo application is a simple implementation that demonstrates the basic functionalities of the framework. It receives a message, processes it, and sends back the message as a notice, report, and voucher. This document outlines how to use the Echo application, including sending inputs and inspecting outputs. You can find the source code of the Echo application in the [CrabRolls repository](https://github.com/crabrolls-cartesi/crabrolls/blob/main/examples/echo.rs).
+
+## Usage
+
+With the application running, to use it you need to send a message to the application. The message can be sent using the `send` command of the [Cartesi CLI](https://github.com/cartesi/cli) tool. The following example demonstrates how to send a message to the Echo application:
+
+```bash title="Terminal" "Hi Crabrolls!"
+cartesi send generic --input='Hi Crabrolls!'
+```
+
+The application will process the message and send back the message as a notice, report, and voucher. The following example demonstrates how to get the outputs of the application:
+
+```bash title="Terminal" /{"query":".*"}/
+curl 'http://localhost:8080/graphql' -H 'Content-Type: application/json' -d '{"query":"query getLastEntries { inputs(last: 1) { edges { node { notices(last: 1) { edges { node { index payload } } } reports(last: 1) { edges { node { index payload } } } vouchers(last: 1) { edges { node { index payload destination } } } } } } }"}' | jq
+```
+
+this will return the last entries of the application, including the notice, report, and voucher:
+
+```json title="Response" /0x(?!deadbeef)[0-9a-fA-F]{2,}/
+{
+	"data": {
+		"inputs": {
+			"edges": [
+				{
+					"node": {
+						"notices": {
+							"edges": [
+								{
+									"node": {
+										"index": 0,
+										"payload": "0x48692043726162726f6c6c7321"
+									}
+								}
+							]
+						},
+						"reports": {
+							"edges": [
+								{
+									"node": {
+										"index": 0,
+										"payload": "0x48692043726162726f6c6c7321"
+									}
+								}
+							]
+						},
+						"vouchers": {
+							"edges": [
+								{
+									"node": {
+										"index": 0,
+										"payload": "0x48692043726162726f6c6c7321",
+										"destination": "0xdeadbeef"
+									}
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	}
+}
+```
+
+And that's it! You have successfully used the Echo application to send and receive messages, now you can decode the response payload `0x48692043726162726f6c6c7321` using the command:
+
+```bash title="Terminal" "0x48692043726162726f6c6c7321"
+echo "0x48692043726162726f6c6c7321" | xxd -r -p
+```
+
+This will return the message:
+
+```json title="Response"
+"Hi Crabrolls!"
+```
