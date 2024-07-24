@@ -6,9 +6,8 @@ mod core;
 mod types;
 mod utils;
 
-pub use core::{application::Application, environment::Environment};
-
-pub use types::machine::{FinishStatus, Metadata, Output};
+use core::{application::Application, environment::Environment};
+use types::machine::{FinishStatus, Metadata};
 
 pub mod prelude {
     pub use crate::core::{
@@ -20,6 +19,6 @@ pub mod prelude {
 
     pub use crate::types::{
         address::Address,
-        machine::{FinishStatus, Metadata, Output},
+        machine::{Deposit, FinishStatus, Metadata, Output},
     };
 }

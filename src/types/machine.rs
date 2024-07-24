@@ -1,4 +1,5 @@
 use crate::{types::address::Address, utils::parsers::deserializers::*};
+use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug, Clone)]
@@ -50,5 +51,35 @@ pub enum Output {
     Report {
         #[serde(serialize_with = "serialize_bytes_as_string")]
         payload: Vec<u8>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Deposit {
+    Ether {
+        sender: Address,
+        amount: BigInt,
+    },
+    ERC20 {
+        sender: Address,
+        token: Address,
+        amount: BigInt,
+    },
+    ERC721 {
+        sender: Address,
+        token: Address,
+        id: BigInt,
+    },
+    ERC1155Single {
+        sender: Address,
+        token: Address,
+        id: BigInt,
+        amount: BigInt,
+    },
+    ERC1155Batch {
+        sender: Address,
+        token: Address,
+        ids: Vec<BigInt>,
+        amounts: Vec<BigInt>,
     },
 }

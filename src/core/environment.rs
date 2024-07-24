@@ -1,4 +1,5 @@
 use crate::types::machine::{Advance, FinishStatus, Input, Inspect, Output};
+use crate::utils::address_book::AddressBook;
 use crate::{types::address::Address, utils::requests::ClientWrapper};
 use serde_json::Value;
 use std::error::Error;
@@ -24,12 +25,14 @@ pub trait Environment {
 
 pub struct Rollup {
     client: ClientWrapper,
+    pub address_book: AddressBook,
 }
 
 impl Rollup {
     pub fn new(url: String) -> Self {
         Self {
             client: ClientWrapper::new(url),
+            address_book: AddressBook::default(),
         }
     }
 }

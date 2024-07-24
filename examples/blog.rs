@@ -104,6 +104,7 @@ impl Application for JsonApp {
         env: &impl Environment,
         _metadata: Metadata,
         payload: Vec<u8>,
+        _deposit: Option<Deposit>,
     ) -> Result<FinishStatus, Box<dyn Error>> {
         let input: Input = serde_json::from_slice(&payload)?;
 

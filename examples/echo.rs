@@ -15,6 +15,7 @@ impl Application for EchoApp {
         env: &impl Environment,
         metadata: Metadata,
         payload: Vec<u8>,
+        _deposit: Option<Deposit>,
     ) -> Result<FinishStatus, Box<dyn Error>> {
         println!(
             "Advance method called with payload: {:?}",

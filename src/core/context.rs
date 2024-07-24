@@ -38,9 +38,34 @@ pub async fn run(app: impl Application, options: RunOptions) -> Result<(), Box<d
 
         match input {
             Some(Input::Advance(advance_input)) => {
-                debug!("Advance input: {:?}", advance_input);
+                debug!("NNew Advance input: {:?}", advance_input);
+
+                match advance_input.metadata.sender {
+                    sender if sender == rollup.address_book.ether_portal => {
+                        debug!("Advance input from EtherPortal({})", sender);
+                    }
+                    sender if sender == rollup.address_book.erc20_portal => {
+                        debug!("Advance input from ERC20Portal({})", sender);
+                    }
+                    sender if sender == rollup.address_book.erc721_portal => {
+                        debug!("Advance input from ERC721Portal({})", sender);
+                    }
+                    sender if sender == rollup.address_book.erc1155_single_portal => {
+                        debug!("Advance input from ERC1155SinglePortal({})", sender);
+                    }
+                    sender if sender == rollup.address_book.erc1155_batch_portal => {
+                        debug!("Advance input from ERC1155BatchPortal({})", sender);
+                    }
+                    sender if sender == rollup.address_book.app_address_relay => {
+                        debug!("Advance input from AppAddressRelay({})", sender);
+                    }
+                    _ => {
+                        debug!("Advance input from an unknown address");
+                    }
+                }
+
                 match app
-                    .advance(&rollup, advance_input.metadata, advance_input.payload)
+                    .advance(&rollup, advance_input.metadata, advance_input.payload, None)
                     .await
                 {
                     Ok(result_status) => {

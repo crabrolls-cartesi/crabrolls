@@ -5,5 +5,8 @@ Cargo.lock
 **/*.rs.bk
 *.pdb
 
+# Dev files
+.vscode
+
 # Temp files
 temp.md
