@@ -1,4 +1,4 @@
-use async_std::sync::Mutex;
+use async_std::sync::{Mutex, RwLock};
 use std::{error::Error, time::UNIX_EPOCH};
 
 use crate::{
@@ -11,44 +11,42 @@ use crate::{
 };
 
 pub struct RollupMockup {
-    outputs: Mutex<Vec<Output>>,
+    outputs: RwLock<Vec<Output>>,
     input_index: Mutex<i32>,
 }
 
 impl RollupMockup {
     pub fn new() -> Self {
         RollupMockup {
-            outputs: Mutex::new(Vec::new()),
+            outputs: RwLock::new(Vec::new()),
             input_index: Mutex::new(0),
         }
     }
 
-    pub async fn handle(&self, output: Output) -> Option<i32> {
-        self.outputs.lock().await.push(output);
-
-        Some(
-            self.outputs
-                .lock()
-                .await
-                .len()
-                .try_into()
-                .expect("Failed to convert usize to i32"),
-        )
+    pub async fn handle(&self, output: Output) -> Result<i32, Box<dyn Error>> {
+        let mut outputs = self.outputs.write().await;
+        outputs.push(output);
+        Ok(outputs.len().try_into()?)
     }
 
     async fn reset(&self) {
-        self.outputs.lock().await.clear();
+        let mut outputs = self.outputs.write().await;
+        outputs.clear();
     }
 
-    pub async fn advance(&self, status: FinishStatus) -> Option<Vec<Output>> {
-        *self.input_index.lock().await += 1;
+    pub async fn advance(
+        &self,
+        status: FinishStatus,
+    ) -> Result<Option<Vec<Output>>, Box<dyn Error>> {
+        let mut input_index = self.input_index.lock().await;
+        *input_index += 1;
 
-        let outputs = self.outputs.lock().await.clone();
+        let outputs = self.outputs.read().await.clone();
         self.reset().await;
 
         match status {
-            FinishStatus::Accept => Some(outputs),
-            FinishStatus::Reject => None,
+            FinishStatus::Accept => Ok(Some(outputs)),
+            FinishStatus::Reject => Ok(None),
         }
     }
 
@@ -63,23 +61,19 @@ impl Environment for RollupMockup {
         destination: Address,
         payload: Vec<u8>,
     ) -> Result<i32, Box<dyn Error>> {
-        let output = Output::Voucher {
-            destination: destination,
+        self.handle(Output::Voucher {
+            destination,
             payload,
-        };
-        let index = self.handle(output).await.expect("Failed to send voucher");
-        Ok(index)
+        })
+        .await
     }
 
     async fn send_notice(&self, payload: Vec<u8>) -> Result<i32, Box<dyn Error>> {
-        let output = Output::Notice { payload };
-        let index = self.handle(output).await.expect("Failed to send notice");
-        Ok(index)
+        self.handle(Output::Notice { payload }).await
     }
 
     async fn send_report(&self, payload: Vec<u8>) -> Result<(), Box<dyn Error>> {
-        let output = Output::Report { payload };
-        self.handle(output).await.expect("Failed to send report");
+        self.handle(Output::Report { payload }).await?;
         Ok(())
     }
 }
@@ -119,7 +113,10 @@ where
 
         AdvanceResult {
             status,
-            outputs: self.env.advance(status).await.unwrap_or_default(),
+            outputs: match self.env.advance(status).await {
+                Ok(Some(outputs)) => outputs,
+                _ => Vec::new(),
+            },
             metadata,
             error,
         }
@@ -133,7 +130,7 @@ where
 
         InspectResult {
             status,
-            outputs: self.env.outputs.lock().await.clone(),
+            outputs: self.env.outputs.read().await.clone(),
             error,
         }
     }

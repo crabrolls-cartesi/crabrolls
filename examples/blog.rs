@@ -1,4 +1,4 @@
-use async_std::sync::Mutex;
+use async_std::sync::RwLock;
 use crabrolls::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::{error::Error, sync::Arc};
@@ -87,13 +87,13 @@ impl BlogApp {
 }
 
 struct JsonApp {
-    blog_app: Arc<Mutex<BlogApp>>,
+    blog_app: Arc<RwLock<BlogApp>>,
 }
 
 impl JsonApp {
     fn new() -> Self {
         Self {
-            blog_app: Arc::new(Mutex::new(BlogApp::new())),
+            blog_app: Arc::new(RwLock::new(BlogApp::new())),
         }
     }
 }
@@ -107,7 +107,7 @@ impl Application for JsonApp {
     ) -> Result<FinishStatus, Box<dyn Error>> {
         let input: Input = serde_json::from_slice(&payload)?;
 
-        let mut app = self.blog_app.lock().await;
+        let mut app = self.blog_app.write().await;
         match input {
             Input::AddPost { title, content } => {
                 app.handle_add_post(title, content)?;
@@ -145,7 +145,7 @@ impl Application for JsonApp {
         env: &impl Environment,
         _payload: Vec<u8>,
     ) -> Result<FinishStatus, Box<dyn Error>> {
-        let app = self.blog_app.lock().await;
+        let app = self.blog_app.read().await;
         let response = serde_json::to_vec(&app.posts)?;
         env.send_report(response).await?;
         Ok(FinishStatus::Accept)
@@ -164,7 +164,6 @@ async fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use async_std::sync::Mutex;
     use crabrolls::prelude::*;
     use std::sync::Arc;
 
