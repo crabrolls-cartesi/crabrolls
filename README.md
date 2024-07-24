@@ -12,7 +12,7 @@ This project aims to provide a high-level framework for developing Rust-based da
 
 -   **Rollup API Integration**: Full support for interacting with the [Rollups API](https://docs.cartesi.io/cartesi-rollups/api/) from Rust.
 -   **High-level Abstractions**: Simplified interfaces for common tasks such as state management, event handling, and more.
--   **Modular Design**: Flexible and extensible architecture for easy customization and extension.
+-   **Examples**: Comprehensive examples demonstrating how to build dapps using CrabRolls.
 -   **Testing Suite**: Integrated tools for robust testing without requiring running a Cartesi machine, leveraging Rust's testing capabilities.
 -   **Cargo Integration**: Easy distribution and installation through Rust’s build system and package manager with [cargo](https://doc.rust-lang.org/cargo/), deploying the framework as a crate on [crates.io](https://crates.io/).
 -   **Comprehensive Documentation**: Utilizing the tool [starlight](https://starlight.astro.build/) for documentation, including examples, guides, and API references.
