@@ -97,7 +97,7 @@ where
     pub async fn advance(&self, sender: Address, payload: Vec<u8>) -> AdvanceResult {
         let metadata = Metadata {
             input_index: self.env.get_input_index().await,
-            msg_sender: sender,
+            sender: sender,
             block_number: self.env.get_input_index().await as i64,
             timestamp: UNIX_EPOCH.elapsed().unwrap().as_secs() as i64,
         };

@@ -35,9 +35,9 @@ export default defineConfig({
 					},
 				},
 				{
-					label: 'Unit Tests',
+					label: 'Advanced',
 					autogenerate: {
-						directory: 'testing',
+						directory: 'advanced',
 					},
 				},
 			],

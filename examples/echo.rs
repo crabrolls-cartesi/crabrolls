@@ -22,7 +22,7 @@ impl Application for EchoApp {
         );
         env.send_notice(payload.clone()).await?;
         env.send_report(payload.clone()).await?;
-        env.send_voucher(metadata.msg_sender, payload).await?;
+        env.send_voucher(metadata.sender, payload).await?;
         Ok(FinishStatus::Accept)
     }
 
@@ -94,6 +94,12 @@ mod tests {
                 }
             ],
             "Expected outputs to match"
+        );
+
+        assert_eq!(
+            result.metadata.sender,
+            Address::default(),
+            "Unexpected sender address"
         );
     }
 }

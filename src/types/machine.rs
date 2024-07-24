@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Debug, Clone)]
 pub struct Metadata {
     pub input_index: i32,
-    pub msg_sender: Address,
+    pub sender: Address,
     pub block_number: i64,
     pub timestamp: i64,
 }
