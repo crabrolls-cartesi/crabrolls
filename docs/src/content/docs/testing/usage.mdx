@@ -1,0 +1,168 @@
+---
+title: Usage of Testing Suite
+description: About how to use the testing suite in CrabRolls.
+sidebar:
+    order: 0
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+Unit testing is an essential part of software development, ensuring your code behaves as expected. In CrabRolls, you can create comprehensive unit tests to validate your dApp's functionality. This guide will walk you through the process of setting up and writing unit tests for your dApp.
+
+<Aside>
+	All the tests are executed in a simulated environment / locally, so you don't need to be running a host machine like [Nonodo](https://github.com/Calindra/nonodo/). Because of that, you can run the
+	tests in your local machine without any additional setup or dependencies and validate your application's behavior.
+</Aside>
+
+### Writing Your First Unit Test
+
+<Steps>
+1. **Create a New Test Module:**
+   Inside your application code, typically at the bottom of your `main.rs` or in a separate `tests` module, you can define your tests.
+
+    ```rust
+    #[cfg(test)]
+    mod tests {
+        use super::*; // You also can import specific items from
+                      // your application instead of using `super::*`.
+        use crabrolls::prelude::*; // Import all utilities from CrabRolls
+    }
+    ```
+
+2.  **Define a Test Function:**
+    Tests in CrabRolls are asynchronous. Use the `async_std::test` attribute to define an async test function.
+
+    ```rust
+    #[async_std::test]
+    async fn test_my_app() {
+        // Test logic goes here
+    }
+    ```
+
+3.  **Create an Application Instance:**
+    Instantiate your application within the test function.
+
+    ```rust
+    let app = MyApp::new();
+    ```
+
+4.  **Create a Tester Instance:**
+    Use the `Tester` utility to create a tester from your application instance. The tester helps you simulate and validate the application's behavior.
+
+    ```rust
+    let tester = Tester::new(app);
+    ```
+
+5.  **Prepare Input Payload:**
+    Next, prepare the input payload for the application based on the test scenario.
+
+    ```rust
+    let payload = b"Hi Crabrolls!".to_vec();
+    ```
+
+6.  **Simulate Application Advance:**
+    Use the tester to advance the state of your application with the prepared payload.
+
+    ```rust
+    let result = tester.advance(Address::default(), payload).await;
+    ```
+
+    and you can do the same for inspect the application state:
+
+    ```rust
+    let result = tester.inspect(payload).await;
+    ```
+
+7.  **Validate Test Results:**
+    Check the results of the advance operation. Validate the status, errors, and outputs to ensure the application behaves as expected.
+
+        ```rust
+        // Check the status of the result
+        assert_eq!(result.status, FinishStatus::Accept, "Expected Accept status");
+
+        // Check if there are any errors
+        assert!(result.error.is_none(), "Unexpected error: {:?}", result.error);
+
+        // Validate the outputs length
+        assert_eq!(
+                result.outputs.len(),
+                3,
+                "Expected 3 outputs, got {}",
+                result.outputs.len()
+            );
+
+        // Validate the outputs content
+        assert_eq!(
+                result.outputs,
+                vec![
+                    Output::Notice {
+                        payload: payload.clone()
+                    },
+                    Output::Report {
+                        payload: payload.clone()
+                    },
+                    Output::Voucher {
+                        destination: address,
+                        payload: payload.clone()
+                    }
+                ],
+                "Unexpected outputs: {:?}",
+                result.outputs
+            );
+        ```
+
+</Steps>
+
+### Complete test case example
+
+Here's an example of a complete test case following the steps above for a echo application like the [Echo example](../../getting-started/examples/echo):
+
+```rust showLineNumbers title="echo_tests.rs"
+#[cfg(test)]
+mod tests {
+    use super::*; // Import all items needed for the tests
+    use crabrolls::prelude::*; // Import all utilities from CrabRolls
+
+    #[async_std::test]
+    async fn test_my_echo_app() {
+        // Create an instance of your application
+        let app = MyApp::new();
+
+        // Create a tester instance
+        let tester = Tester::new(app);
+
+        // Prepare input payload
+        let payload = b"Hi Crabrolls!".to_vec();
+
+        // Simulate application advance
+        let result = tester.advance(Address::default(), payload).await;
+
+        // Validate test results
+        assert_eq!(result.status, FinishStatus::Accept, "Expected Accept status");
+        assert!(result.error.is_none(), "Unexpected error: {:?}", result.error);
+        assert_eq!(
+            result.outputs.len(),
+            3,
+            "Expected 3 outputs, got {}",
+            result.outputs.len()
+        );
+        assert_eq!(
+            result.outputs,
+            vec![
+                Output::Notice {
+                    payload: payload.clone()
+                },
+                Output::Report {
+                    payload: payload.clone()
+                },
+                Output::Voucher {
+                    destination: address,
+                    payload: payload.clone()
+                }
+            ],
+            "Unexpected outputs: {:?}",
+            result.outputs
+        );
+    }
+}
+```

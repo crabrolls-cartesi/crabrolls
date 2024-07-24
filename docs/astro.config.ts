@@ -2,6 +2,7 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import starlightLinksValidator from 'starlight-links-validator';
 import starlightImageZoom from 'starlight-image-zoom';
+import { pluginLineNumbers } from '@expressive-code/plugin-line-numbers';
 
 // https://astro.build/config
 export default defineConfig({
@@ -23,11 +24,21 @@ export default defineConfig({
 			sidebar: [
 				{
 					label: 'Overview',
-					autogenerate: { directory: 'overview' },
+					autogenerate: {
+						directory: 'overview',
+					},
 				},
 				{
 					label: 'Getting Started',
-					autogenerate: { directory: 'getting-started' },
+					autogenerate: {
+						directory: 'getting-started',
+					},
+				},
+				{
+					label: 'Unit Tests',
+					autogenerate: {
+						directory: 'testing',
+					},
 				},
 			],
 			pagination: true,
@@ -37,6 +48,12 @@ export default defineConfig({
 				}),
 				starlightImageZoom(),
 			],
+			expressiveCode: {
+				plugins: [pluginLineNumbers()],
+				defaultProps: {
+					showLineNumbers: false,
+				},
+			},
 		}),
 	],
 });
