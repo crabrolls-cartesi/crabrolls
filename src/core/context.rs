@@ -68,7 +68,7 @@ pub async fn run(app: impl Application, options: RunOptions) -> Result<(), Box<d
                     .advance(
                         &rollup,
                         advance_input.metadata,
-                        advance_input.payload.into(),
+                        advance_input.payload.as_slice(),
                     )
                     .await
                 {

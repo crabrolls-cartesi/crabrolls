@@ -1,5 +1,5 @@
 use crate::{types::address::Address, utils::parsers::deserializers::*};
-use num_bigint::BigInt;
+use ethabi::Uint;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug, Clone)]
@@ -58,64 +58,28 @@ pub enum Output {
 pub enum Deposit {
     Ether {
         sender: Address,
-        amount: BigInt,
+        amount: Uint,
     },
     ERC20 {
         sender: Address,
         token: Address,
-        amount: BigInt,
+        amount: Uint,
     },
     ERC721 {
         sender: Address,
         token: Address,
-        id: BigInt,
+        id: Uint,
     },
     ERC1155Single {
         sender: Address,
         token: Address,
-        id: BigInt,
-        amount: BigInt,
+        id: Uint,
+        amount: Uint,
     },
     ERC1155Batch {
         sender: Address,
         token: Address,
-        ids: Vec<BigInt>,
-        amounts: Vec<BigInt>,
+        ids: Vec<Uint>,
+        amounts: Vec<Uint>,
     },
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Payload {
-    input: Vec<u8>,
-    deposit: Option<Deposit>,
-}
-
-impl Payload {
-    pub fn new(input: Vec<u8>, deposit: Option<Deposit>) -> Self {
-        Self { input, deposit }
-    }
-
-    pub fn get_input(&self) -> &[u8] {
-        &self.input
-    }
-
-    pub fn get_deposit(&self) -> &Option<Deposit> {
-        &self.deposit
-    }
-
-    pub fn is_deposit(&self) -> bool {
-        self.deposit.is_some()
-    }
-}
-
-impl From<Vec<u8>> for Payload {
-    fn from(input: Vec<u8>) -> Self {
-        Self::new(input, None)
-    }
-}
-
-impl From<(Vec<u8>, Deposit)> for Payload {
-    fn from((input, deposit): (Vec<u8>, Deposit)) -> Self {
-        Self::new(input, Some(deposit))
-    }
 }

@@ -1,7 +1,15 @@
+use ethabi::Address as EthAddress;
 use serde::{Deserialize, Serialize};
 
+#[macro_export]
+macro_rules! address {
+    ($address:expr) => {
+        (|| -> Address { $address.parse().expect("Invalid address format") })()
+    };
+}
+
 #[repr(C)]
-#[derive(Clone, Copy, PartialEq, Eq, Default, Debug)]
+#[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Default, Debug, Hash)]
 pub struct H160(pub [u8; 20]);
 
 impl std::fmt::Display for H160 {
@@ -41,6 +49,52 @@ impl<'de> Deserialize<'de> for H160 {
         let mut inner = [0u8; 20];
         inner.copy_from_slice(&bytes);
         Ok(H160(inner))
+    }
+}
+
+impl From<EthAddress> for H160 {
+    fn from(address: EthAddress) -> Self {
+        let mut inner = [0u8; 20];
+        inner.copy_from_slice(&address.as_bytes());
+        H160(inner)
+    }
+}
+
+impl From<H160> for EthAddress {
+    fn from(address: H160) -> Self {
+        EthAddress::from_slice(&address.0)
+    }
+}
+
+impl From<H160> for [u8; 20] {
+    fn from(address: H160) -> Self {
+        address.0
+    }
+}
+
+impl From<H160> for Vec<u8> {
+    fn from(address: H160) -> Self {
+        address.0.to_vec()
+    }
+}
+
+impl From<H160> for String {
+    fn from(address: H160) -> Self {
+        address.to_string()
+    }
+}
+
+impl From<&[u8]> for H160 {
+    fn from(bytes: &[u8]) -> Self {
+        let mut inner = [0u8; 20];
+        inner.copy_from_slice(bytes);
+        H160(inner)
+    }
+}
+
+impl From<&str> for H160 {
+    fn from(s: &str) -> Self {
+        s.parse().expect("Invalid address format")
     }
 }
 

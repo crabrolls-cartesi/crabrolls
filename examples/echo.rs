@@ -14,16 +14,15 @@ impl Application for EchoApp {
         &self,
         env: &impl Environment,
         metadata: Metadata,
-        payload: Payload,
+        payload: &[u8],
     ) -> Result<FinishStatus, Box<dyn Error>> {
         println!(
             "Advance method called with payload: {:?}",
-            String::from_utf8_lossy(payload.get_input())
+            String::from_utf8_lossy(&payload)
         );
-        env.send_notice(payload.get_input()).await?;
-        env.send_report(payload.get_input()).await?;
-        env.send_voucher(metadata.sender, payload.get_input())
-            .await?;
+        env.send_notice(payload.clone()).await?;
+        env.send_report(payload.clone()).await?;
+        env.send_voucher(metadata.sender, payload).await?;
         Ok(FinishStatus::Accept)
     }
 

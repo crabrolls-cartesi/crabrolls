@@ -103,9 +103,9 @@ impl Application for JsonApp {
         &self,
         env: &impl Environment,
         _metadata: Metadata,
-        payload: Payload,
+        payload: &[u8],
     ) -> Result<FinishStatus, Box<dyn Error>> {
-        let input: Input = serde_json::from_slice(payload.get_input())?;
+        let input: Input = serde_json::from_slice(&payload)?;
 
         let mut app = self.blog_app.write().await;
         match input {

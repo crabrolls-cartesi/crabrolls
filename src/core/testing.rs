@@ -110,7 +110,7 @@ where
 
         let (status, error) = match self
             .app
-            .advance(&self.env, metadata.clone(), payload.into())
+            .advance(&self.env, metadata.clone(), payload.as_slice())
             .await
         {
             Ok(finish_status) => (finish_status, None),
