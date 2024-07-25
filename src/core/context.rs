@@ -65,7 +65,11 @@ pub async fn run(app: impl Application, options: RunOptions) -> Result<(), Box<d
                 }
 
                 match app
-                    .advance(&rollup, advance_input.metadata, advance_input.payload, None)
+                    .advance(
+                        &rollup,
+                        advance_input.metadata,
+                        advance_input.payload.into(),
+                    )
                     .await
                 {
                     Ok(result_status) => {
@@ -80,7 +84,7 @@ pub async fn run(app: impl Application, options: RunOptions) -> Result<(), Box<d
             }
             Some(Input::Inspect(inspect_input)) => {
                 debug!("Inspect input: {:?}", inspect_input);
-                match app.inspect(&rollup, inspect_input.payload).await {
+                match app.inspect(&rollup, &inspect_input.payload).await {
                     Ok(result_status) => {
                         debug!("Inspect status: {:?}", result_status);
                         status = result_status;

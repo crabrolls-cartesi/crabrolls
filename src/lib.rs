@@ -19,6 +19,6 @@ pub mod prelude {
 
     pub use crate::types::{
         address::Address,
-        machine::{Deposit, FinishStatus, Metadata, Output},
+        machine::{Deposit, FinishStatus, Metadata, Output, Payload},
     };
 }

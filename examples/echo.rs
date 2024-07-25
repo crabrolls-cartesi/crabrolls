@@ -14,23 +14,23 @@ impl Application for EchoApp {
         &self,
         env: &impl Environment,
         metadata: Metadata,
-        payload: Vec<u8>,
-        _deposit: Option<Deposit>,
+        payload: Payload,
     ) -> Result<FinishStatus, Box<dyn Error>> {
         println!(
             "Advance method called with payload: {:?}",
-            String::from_utf8_lossy(&payload)
+            String::from_utf8_lossy(payload.get_input())
         );
-        env.send_notice(payload.clone()).await?;
-        env.send_report(payload.clone()).await?;
-        env.send_voucher(metadata.sender, payload).await?;
+        env.send_notice(payload.get_input()).await?;
+        env.send_report(payload.get_input()).await?;
+        env.send_voucher(metadata.sender, payload.get_input())
+            .await?;
         Ok(FinishStatus::Accept)
     }
 
     async fn inspect(
         &self,
         env: &impl Environment,
-        payload: Vec<u8>,
+        payload: &[u8],
     ) -> Result<FinishStatus, Box<dyn Error>> {
         println!(
             "Inspect method called with payload: {:?}",

@@ -12,7 +12,7 @@ use crate::{
 
 pub struct RollupMockup {
     outputs: RwLock<Vec<Output>>,
-    input_index: Mutex<i32>,
+    input_index: Mutex<u64>,
 }
 
 impl RollupMockup {
@@ -50,7 +50,7 @@ impl RollupMockup {
         }
     }
 
-    pub async fn get_input_index(&self) -> i32 {
+    pub async fn get_input_index(&self) -> u64 {
         *self.input_index.lock().await
     }
 }
@@ -59,21 +59,27 @@ impl Environment for RollupMockup {
     async fn send_voucher(
         &self,
         destination: Address,
-        payload: Vec<u8>,
+        payload: impl AsRef<[u8]> + Send,
     ) -> Result<i32, Box<dyn Error>> {
         self.handle(Output::Voucher {
             destination,
-            payload,
+            payload: payload.as_ref().to_vec(),
         })
         .await
     }
 
-    async fn send_notice(&self, payload: Vec<u8>) -> Result<i32, Box<dyn Error>> {
-        self.handle(Output::Notice { payload }).await
+    async fn send_notice(&self, payload: impl AsRef<[u8]> + Send) -> Result<i32, Box<dyn Error>> {
+        self.handle(Output::Notice {
+            payload: payload.as_ref().to_vec(),
+        })
+        .await
     }
 
-    async fn send_report(&self, payload: Vec<u8>) -> Result<(), Box<dyn Error>> {
-        self.handle(Output::Report { payload }).await?;
+    async fn send_report(&self, payload: impl AsRef<[u8]> + Send) -> Result<(), Box<dyn Error>> {
+        self.handle(Output::Report {
+            payload: payload.as_ref().to_vec(),
+        })
+        .await?;
         Ok(())
     }
 }
@@ -98,13 +104,13 @@ where
         let metadata = Metadata {
             input_index: self.env.get_input_index().await,
             sender: sender,
-            block_number: self.env.get_input_index().await as i64,
-            timestamp: UNIX_EPOCH.elapsed().unwrap().as_secs() as i64,
+            block_number: self.env.get_input_index().await,
+            timestamp: UNIX_EPOCH.elapsed().unwrap().as_secs(),
         };
 
         let (status, error) = match self
             .app
-            .advance(&self.env, metadata.clone(), payload.clone(), None)
+            .advance(&self.env, metadata.clone(), payload.into())
             .await
         {
             Ok(finish_status) => (finish_status, None),
@@ -122,8 +128,8 @@ where
         }
     }
 
-    pub async fn inspect(&self, payload: Vec<u8>) -> InspectResult {
-        let (status, error) = match self.app.inspect(&self.env, payload.clone()).await {
+    pub async fn inspect(&self, payload: &[u8]) -> InspectResult {
+        let (status, error) = match self.app.inspect(&self.env, payload).await {
             Ok(finish_status) => (finish_status, None),
             Err(e) => (FinishStatus::Reject, Some(e)),
         };

@@ -103,10 +103,9 @@ impl Application for JsonApp {
         &self,
         env: &impl Environment,
         _metadata: Metadata,
-        payload: Vec<u8>,
-        _deposit: Option<Deposit>,
+        payload: Payload,
     ) -> Result<FinishStatus, Box<dyn Error>> {
-        let input: Input = serde_json::from_slice(&payload)?;
+        let input: Input = serde_json::from_slice(payload.get_input())?;
 
         let mut app = self.blog_app.write().await;
         match input {
@@ -144,7 +143,7 @@ impl Application for JsonApp {
     async fn inspect(
         &self,
         env: &impl Environment,
-        _payload: Vec<u8>,
+        _payload: &[u8],
     ) -> Result<FinishStatus, Box<dyn Error>> {
         let app = self.blog_app.read().await;
         let response = serde_json::to_vec(&app.posts)?;

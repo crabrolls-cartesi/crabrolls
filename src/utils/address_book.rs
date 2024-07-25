@@ -1,5 +1,6 @@
 use crate::{address, types::address::Address};
 
+#[allow(dead_code)]
 pub struct AddressBook {
     pub cartesi_app_factory: Address,
     pub app_address_relay: Address,

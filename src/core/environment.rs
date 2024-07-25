@@ -9,17 +9,17 @@ pub trait Environment {
     fn send_voucher(
         &self,
         destination: Address,
-        payload: Vec<u8>,
+        payload: impl AsRef<[u8]> + Send,
     ) -> impl Future<Output = Result<i32, Box<dyn Error>>> + Send;
 
     fn send_notice(
         &self,
-        payload: Vec<u8>,
+        payload: impl AsRef<[u8]> + Send,
     ) -> impl Future<Output = Result<i32, Box<dyn Error>>> + Send;
 
     fn send_report(
         &self,
-        payload: Vec<u8>,
+        payload: impl AsRef<[u8]> + Send,
     ) -> impl Future<Output = Result<(), Box<dyn Error>>> + Send;
 }
 
@@ -41,26 +41,30 @@ impl Environment for Rollup {
     async fn send_voucher(
         &self,
         destination: Address,
-        payload: Vec<u8>,
+        payload: impl AsRef<[u8]> + Send,
     ) -> Result<i32, Box<dyn Error>> {
         let voucher = Output::Voucher {
             destination,
-            payload,
+            payload: payload.as_ref().to_vec(),
         };
         let response = self.client.post("voucher", &voucher).await?;
         let output: serde_json::Value = self.client.parse_response(response).await?;
         Ok(output["index"].as_i64().unwrap_or(0) as i32)
     }
 
-    async fn send_notice(&self, payload: Vec<u8>) -> Result<i32, Box<dyn Error>> {
-        let notice = Output::Notice { payload };
+    async fn send_notice(&self, payload: impl AsRef<[u8]> + Send) -> Result<i32, Box<dyn Error>> {
+        let notice = Output::Notice {
+            payload: payload.as_ref().to_vec(),
+        };
         let response = self.client.post("notice", &notice).await?;
         let output: Value = self.client.parse_response(response).await?;
         Ok(output["index"].as_i64().unwrap_or(0) as i32)
     }
 
-    async fn send_report(&self, payload: Vec<u8>) -> Result<(), Box<dyn Error>> {
-        let report = Output::Report { payload };
+    async fn send_report(&self, payload: impl AsRef<[u8]> + Send) -> Result<(), Box<dyn Error>> {
+        let report = Output::Report {
+            payload: payload.as_ref().to_vec(),
+        };
         self.client.post("report", &report).await?;
         Ok(())
     }

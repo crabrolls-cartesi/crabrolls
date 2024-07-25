@@ -4,10 +4,10 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Metadata {
-    pub input_index: i32,
+    pub input_index: u64,
     pub sender: Address,
-    pub block_number: i64,
-    pub timestamp: i64,
+    pub block_number: u64,
+    pub timestamp: u64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq)]
@@ -82,4 +82,40 @@ pub enum Deposit {
         ids: Vec<BigInt>,
         amounts: Vec<BigInt>,
     },
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Payload {
+    input: Vec<u8>,
+    deposit: Option<Deposit>,
+}
+
+impl Payload {
+    pub fn new(input: Vec<u8>, deposit: Option<Deposit>) -> Self {
+        Self { input, deposit }
+    }
+
+    pub fn get_input(&self) -> &[u8] {
+        &self.input
+    }
+
+    pub fn get_deposit(&self) -> &Option<Deposit> {
+        &self.deposit
+    }
+
+    pub fn is_deposit(&self) -> bool {
+        self.deposit.is_some()
+    }
+}
+
+impl From<Vec<u8>> for Payload {
+    fn from(input: Vec<u8>) -> Self {
+        Self::new(input, None)
+    }
+}
+
+impl From<(Vec<u8>, Deposit)> for Payload {
+    fn from((input, deposit): (Vec<u8>, Deposit)) -> Self {
+        Self::new(input, Some(deposit))
+    }
 }
