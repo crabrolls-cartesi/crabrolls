@@ -1,29 +1,42 @@
 use crabrolls::prelude::*;
 use std::error::Error;
 
-struct EchoApp;
+struct DepositApp;
 
-impl EchoApp {
+impl DepositApp {
 	fn new() -> Self {
 		Self
 	}
 }
 
-impl Application for EchoApp {
+impl Application for DepositApp {
 	async fn advance(
 		&self,
 		env: &impl Environment,
 		metadata: Metadata,
 		payload: &[u8],
-		_deposit: Option<Deposit>,
+		deposit: Option<Deposit>,
 	) -> Result<FinishStatus, Box<dyn Error>> {
-		println!(
-			"Advance method called with payload: {:?}",
-			String::from_utf8_lossy(&payload)
-		);
-		env.send_notice(payload).await?;
-		env.send_report(payload).await?;
-		env.send_voucher(metadata.sender, payload).await?;
+		match deposit {
+			Some(Deposit::Ether { sender, amount }) => {
+				println!(
+					"Received deposit of {} ether from {}",
+					units::wei::to_ether(amount),
+					sender
+				);
+
+				println!(
+					"Balance of sender: {}",
+					units::wei::to_ether(env.ether_balance(sender).await)
+				);
+				if units::wei::to_ether(env.ether_balance(sender).await) > 10.0 {
+					env.ether_withdraw(sender, env.ether_balance(sender).await).await?;
+				}
+			}
+			None => {}
+			_ => todo!(),
+		}
+
 		Ok(FinishStatus::Accept)
 	}
 
@@ -32,14 +45,13 @@ impl Application for EchoApp {
 			"Inspect method called with payload: {:?}",
 			String::from_utf8_lossy(&payload)
 		);
-		env.send_report(payload).await?;
 		Ok(FinishStatus::Accept)
 	}
 }
 
 #[async_std::main]
 async fn main() {
-	let app = EchoApp::new();
+	let app = DepositApp::new();
 	let options = RunOptions::default();
 	if let Err(e) = run(app, options).await {
 		eprintln!("Error: {}", e);
@@ -48,12 +60,12 @@ async fn main() {
 
 #[cfg(test)]
 mod tests {
-	use super::EchoApp;
+	use super::DepositApp;
 	use crabrolls::prelude::*;
 
 	#[async_std::test]
 	async fn test_echo() {
-		let app = EchoApp::new();
+		let app = DepositApp::new();
 		let tester = Tester::new(app);
 
 		let address = Address::default();

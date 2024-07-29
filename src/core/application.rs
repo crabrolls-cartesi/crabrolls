@@ -1,5 +1,5 @@
 use super::environment::Environment;
-use crate::types::machine::{FinishStatus, Metadata};
+use crate::types::machine::{Deposit, FinishStatus, Metadata};
 use std::{error::Error, future::Future};
 
 pub trait Application {
@@ -8,6 +8,7 @@ pub trait Application {
 		env: &impl Environment,
 		metadata: Metadata,
 		payload: &[u8],
+		deposit: Option<Deposit>,
 	) -> impl Future<Output = Result<FinishStatus, Box<dyn Error>>>;
 
 	fn inspect(

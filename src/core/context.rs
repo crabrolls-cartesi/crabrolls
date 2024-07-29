@@ -1,6 +1,9 @@
 use super::application::Application;
 use super::environment::Rollup;
-use crate::types::machine::{FinishStatus, Input};
+use crate::{
+	prelude::{Address, Deposit},
+	types::machine::{FinishStatus, Input},
+};
 use std::error::Error;
 
 pub struct RunOptions {
@@ -24,7 +27,7 @@ impl RunOptions {
 pub async fn run(app: impl Application, options: RunOptions) -> Result<(), Box<dyn Error>> {
 	pretty_env_logger::init();
 
-	let rollup = Rollup::new(options.rollup_url.clone());
+	let mut rollup = Rollup::new(options.rollup_url.clone());
 
 	let mut status = FinishStatus::Accept;
 
@@ -40,9 +43,17 @@ pub async fn run(app: impl Application, options: RunOptions) -> Result<(), Box<d
 			Some(Input::Advance(advance_input)) => {
 				debug!("NNew Advance input: {:?}", advance_input);
 
+				let mut deposit: Option<Deposit> = None;
+
 				match advance_input.metadata.sender {
 					sender if sender == rollup.address_book.ether_portal => {
 						debug!("Advance input from EtherPortal({})", sender);
+						let (ether_deposit, _) = rollup
+							.ether_wallet
+							.write()
+							.await
+							.deposit(advance_input.payload.clone())?;
+						deposit = Some(ether_deposit);
 					}
 					sender if sender == rollup.address_book.erc20_portal => {
 						debug!("Advance input from ERC20Portal({})", sender);
@@ -58,14 +69,26 @@ pub async fn run(app: impl Application, options: RunOptions) -> Result<(), Box<d
 					}
 					sender if sender == rollup.address_book.app_address_relay => {
 						debug!("Advance input from AppAddressRelay({})", sender);
+						let new_app_address: Address = advance_input.payload.clone().try_into()?;
+						rollup.set_app_address(new_app_address);
+						continue;
 					}
 					_ => {
 						debug!("Advance input from an unknown address");
 					}
 				}
 
+				if deposit.is_some() {
+					debug!("Deposited: {:?}", deposit);
+				}
+
 				match app
-					.advance(&rollup, advance_input.metadata, advance_input.payload.as_slice())
+					.advance(
+						&rollup,
+						advance_input.metadata,
+						advance_input.payload.as_slice(),
+						deposit,
+					)
 					.await
 				{
 					Ok(result_status) => {

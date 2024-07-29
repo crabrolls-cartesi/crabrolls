@@ -1,37 +1,9 @@
 use crate::types::address::Address;
+use crate::types::machine::Deposit;
 use crate::utils::abi::encode;
 use ethabi::Uint;
 use std::collections::HashMap;
 use std::error::Error;
-use std::fmt;
-
-#[derive(Debug, Clone)]
-pub struct EtherDeposit {
-	sender: Address,
-	value: Uint,
-}
-
-impl EtherDeposit {
-	pub fn new(sender: Address, value: Uint) -> Self {
-		EtherDeposit { sender, value }
-	}
-
-	pub fn value_in_ether(&self) -> String {
-		let ether_value = &self.value / &Uint::from(1_000_000_000_000_000_000u64);
-		format!("{}", ether_value)
-	}
-}
-
-impl fmt::Display for EtherDeposit {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(
-			f,
-			"{} deposited {} Ether",
-			self.sender.to_string(),
-			self.value_in_ether()
-		)
-	}
-}
 
 pub struct EtherWallet {
 	balance: HashMap<Address, Uint>,
@@ -62,18 +34,19 @@ impl EtherWallet {
 		self.balance.get(&address).cloned().unwrap_or_else(|| Uint::zero())
 	}
 
-	pub fn deposit(&mut self, payload: &[u8]) -> Result<(EtherDeposit, Vec<u8>), Box<dyn Error>> {
+	pub fn deposit(&mut self, payload: Vec<u8>) -> Result<(Deposit, Vec<u8>), Box<dyn Error>> {
 		if payload.len() < 52 {
 			return Err("invalid eth deposit size".into());
 		}
 
 		let sender = payload[0..20].into();
-		let value = Uint::from_little_endian(&payload[20..52]);
+		let value = Uint::from_big_endian(&payload[20..52]);
+		debug!("new ether deposit from {:?} with value {:?}", sender, value);
 
-		let new_balance = self.balance_of(sender) + value.clone();
+		let new_balance = self.balance_of(sender) + value;
 		self.set_balance(sender, new_balance);
 
-		let deposit = EtherDeposit::new(sender, value);
+		let deposit = Deposit::Ether { sender, amount: value };
 		Ok((deposit, payload[52..].to_vec()))
 	}
 
@@ -116,19 +89,34 @@ mod tests {
 	fn test_ether_deposit_creation() {
 		let address = address!("0x0000000000000000000000000000000000000001");
 		let value = Uint::from(1_000_000_000_000_000_000u64);
-		let deposit = EtherDeposit::new(address.clone(), value.clone());
+		let deposit = Deposit::Ether {
+			sender: address,
+			amount: value,
+		};
 
-		assert_eq!(deposit.sender, address);
-		assert_eq!(deposit.value, value);
+		if let Deposit::Ether { sender, amount } = deposit {
+			assert_eq!(sender, address);
+			assert_eq!(amount, value);
+		} else {
+			panic!("invalid deposit type");
+		}
 	}
 
 	#[test]
 	fn test_value_in_ether() {
 		let address = address!("0x0000000000000000000000000000000000000001");
 		let value = Uint::from(1_000_000_000_000_000_000u64);
-		let deposit = EtherDeposit::new(address.clone(), value.clone());
+		let deposit = Deposit::Ether {
+			sender: address,
+			amount: value,
+		};
 
-		assert_eq!(deposit.value_in_ether(), "1");
+		if let Deposit::Ether { sender, amount } = deposit {
+			assert_eq!(sender, address);
+			assert_eq!(amount, value);
+		} else {
+			panic!("invalid deposit type");
+		}
 	}
 
 	#[test]
@@ -143,8 +131,8 @@ mod tests {
 		let addr1 = address!("0x0000000000000000000000000000000000000001");
 		let addr2 = address!("0x0000000000000000000000000000000000000002");
 
-		wallet.set_balance(addr2.clone(), Uint::from(10u64));
-		wallet.set_balance(addr1.clone(), Uint::from(5u64));
+		wallet.set_balance(addr2, Uint::from(10u64));
+		wallet.set_balance(addr1, Uint::from(5u64));
 
 		let addresses = wallet.addresses();
 		assert_eq!(addresses, vec![addr1, addr2]);
@@ -155,11 +143,11 @@ mod tests {
 		let mut wallet = EtherWallet::new();
 		let address = address!("0x0000000000000000000000000000000000000001");
 
-		wallet.set_balance(address.clone(), Uint::from(100u64));
-		assert_eq!(wallet.balance_of(address.clone()), Uint::from(100u64));
+		wallet.set_balance(address, Uint::from(100u64));
+		assert_eq!(wallet.balance_of(address), Uint::from(100u64));
 
-		wallet.set_balance(address.clone(), Uint::zero());
-		assert_eq!(wallet.balance_of(address.clone()), Uint::zero());
+		wallet.set_balance(address, Uint::zero());
+		assert_eq!(wallet.balance_of(address), Uint::zero());
 	}
 
 	#[test]
@@ -168,13 +156,13 @@ mod tests {
 		let src = address!("0x0000000000000000000000000000000000000001");
 		let dst = address!("0x0000000000000000000000000000000000000002");
 
-		wallet.set_balance(src.clone(), Uint::from(100u64));
-		wallet.set_balance(dst.clone(), Uint::from(50u64));
+		wallet.set_balance(src, Uint::from(100u64));
+		wallet.set_balance(dst, Uint::from(50u64));
 
-		let result = wallet.transfer(src.clone(), dst.clone(), Uint::from(30u64));
+		let result = wallet.transfer(src, dst, Uint::from(30u64));
 		assert!(result.is_ok());
-		assert_eq!(wallet.balance_of(src.clone()), Uint::from(70u64));
-		assert_eq!(wallet.balance_of(dst.clone()), Uint::from(80u64));
+		assert_eq!(wallet.balance_of(src), Uint::from(70u64));
+		assert_eq!(wallet.balance_of(dst), Uint::from(80u64));
 	}
 
 	#[test]
@@ -183,10 +171,10 @@ mod tests {
 		let src = address!("0x0000000000000000000000000000000000000001");
 		let dst = address!("0x0000000000000000000000000000000000000002");
 
-		wallet.set_balance(src.clone(), Uint::from(10u64));
-		wallet.set_balance(dst.clone(), Uint::from(50u64));
+		wallet.set_balance(src, Uint::from(10u64));
+		wallet.set_balance(dst, Uint::from(50u64));
 
-		let result = wallet.transfer(src.clone(), dst.clone(), Uint::from(20u64));
+		let result = wallet.transfer(src, dst, Uint::from(20u64));
 		assert_eq!(result.unwrap_err().to_string(), "insufficient funds");
 	}
 
@@ -195,9 +183,9 @@ mod tests {
 		let mut wallet = EtherWallet::new();
 		let address = address!("0x0000000000000000000000000000000000000001");
 
-		wallet.set_balance(address.clone(), Uint::from(100u64));
+		wallet.set_balance(address, Uint::from(100u64));
 
-		let result = wallet.transfer(address.clone(), address.clone(), Uint::from(10u64));
+		let result = wallet.transfer(address, address, Uint::from(10u64));
 		assert_eq!(result.unwrap_err().to_string(), "can't transfer to self");
 	}
 
@@ -206,11 +194,11 @@ mod tests {
 		let mut wallet = EtherWallet::new();
 		let address = address!("0x0000000000000000000000000000000000000001");
 
-		wallet.set_balance(address.clone(), Uint::from(100u64));
+		wallet.set_balance(address, Uint::from(100u64));
 
-		let encoded_withdraw = wallet.withdraw(address.clone(), Uint::from(50u64)).unwrap();
+		let encoded_withdraw = wallet.withdraw(address, Uint::from(50u64)).unwrap();
 
-		assert_eq!(wallet.balance_of(address.clone()), Uint::from(50u64));
+		assert_eq!(wallet.balance_of(address), Uint::from(50u64));
 	}
 
 	#[test]
@@ -218,9 +206,9 @@ mod tests {
 		let mut wallet = EtherWallet::new();
 		let address = address!("0x0000000000000000000000000000000000000001");
 
-		wallet.set_balance(address.clone(), Uint::from(10u64));
+		wallet.set_balance(address, Uint::from(10u64));
 
-		let result = wallet.withdraw(address.clone(), Uint::from(50u64));
+		let result = wallet.withdraw(address, Uint::from(50u64));
 		assert_eq!(result.unwrap_err().to_string(), "insufficient funds");
 	}
 
@@ -231,20 +219,24 @@ mod tests {
 		let value = Uint::from(1_000_000_000_000_000_000u64);
 
 		let mut value_bytes = vec![0u8; 32];
-		value.to_little_endian(&mut value_bytes);
+		value.to_big_endian(&mut value_bytes);
 
 		let mut payload = vec![0u8; 52];
 		payload[0..20].copy_from_slice(&address.0);
 		payload[20..52].copy_from_slice(&value_bytes);
 
-		let result = wallet.deposit(&payload);
+		let result = wallet.deposit(payload);
 
 		assert!(result.is_ok());
 
-		let (deposit, remaining_payload) = result.unwrap();
+		let (deposit, remaining_payload) = result.expect("deposit failed");
 
-		assert_eq!(deposit.sender, address);
-		assert_eq!(deposit.value, value);
+		if let Deposit::Ether { sender, amount } = deposit {
+			assert_eq!(sender, address);
+			assert_eq!(amount, value);
+		} else {
+			panic!("invalid deposit type");
+		}
 
 		assert_eq!(wallet.balance_of(address), value);
 

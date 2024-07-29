@@ -18,18 +18,6 @@ impl std::fmt::Display for H160 {
 	}
 }
 
-impl std::str::FromStr for H160 {
-	type Err = hex::FromHexError;
-
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let s = s.trim_start_matches("0x");
-		let bytes = hex::decode(s)?;
-		let mut inner = [0u8; 20];
-		inner.copy_from_slice(&bytes);
-		Ok(H160(inner))
-	}
-}
-
 impl Serialize for H160 {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
@@ -46,6 +34,18 @@ impl<'de> Deserialize<'de> for H160 {
 	{
 		let s = String::deserialize(deserializer)?;
 		let bytes = hex::decode(&s[2..]).map_err(serde::de::Error::custom)?;
+		let mut inner = [0u8; 20];
+		inner.copy_from_slice(&bytes);
+		Ok(H160(inner))
+	}
+}
+
+impl std::str::FromStr for H160 {
+	type Err = hex::FromHexError;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		let s = s.trim_start_matches("0x");
+		let bytes = hex::decode(s)?;
 		let mut inner = [0u8; 20];
 		inner.copy_from_slice(&bytes);
 		Ok(H160(inner))
@@ -95,6 +95,20 @@ impl From<&[u8]> for H160 {
 impl From<&str> for H160 {
 	fn from(s: &str) -> Self {
 		s.parse().expect("Invalid address format")
+	}
+}
+
+impl TryFrom<Vec<u8>> for H160 {
+	type Error = &'static str;
+
+	fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
+		if bytes.len() != 20 {
+			Err("Invalid address length")
+		} else {
+			let mut inner = [0u8; 20];
+			inner.copy_from_slice(&bytes);
+			Ok(H160(inner))
+		}
 	}
 }
 

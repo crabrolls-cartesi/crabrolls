@@ -1,4 +1,5 @@
 use async_std::sync::{Mutex, RwLock};
+use ethabi::Uint;
 use std::{error::Error, time::UNIX_EPOCH};
 
 use crate::{
@@ -79,6 +80,22 @@ impl Environment for RollupMockup {
 		.await?;
 		Ok(())
 	}
+
+	async fn ether_addresses(&self) -> Vec<Address> {
+		todo!()
+	}
+
+	async fn ether_withdraw(&self, address: Address, value: Uint) -> Result<(), Box<dyn Error>> {
+		todo!()
+	}
+
+	async fn ether_transfer(&self, source: Address, destination: Address, value: Uint) -> Result<(), Box<dyn Error>> {
+		todo!()
+	}
+
+	async fn ether_balance(&self, address: Address) -> Uint {
+		todo!()
+	}
 }
 
 pub struct Tester<A> {
@@ -105,7 +122,11 @@ where
 			timestamp: UNIX_EPOCH.elapsed().unwrap().as_secs(),
 		};
 
-		let (status, error) = match self.app.advance(&self.env, metadata.clone(), payload.as_slice()).await {
+		let (status, error) = match self
+			.app
+			.advance(&self.env, metadata.clone(), payload.as_slice(), None)
+			.await
+		{
 			Ok(finish_status) => (finish_status, None),
 			Err(e) => (FinishStatus::Reject, Some(e)),
 		};

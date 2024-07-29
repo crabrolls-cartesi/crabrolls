@@ -21,4 +21,6 @@ pub mod prelude {
 		address::Address,
 		machine::{Deposit, FinishStatus, Metadata, Output},
 	};
+
+	pub use crate::utils::units;
 }
