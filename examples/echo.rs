@@ -20,8 +20,8 @@ impl Application for EchoApp {
             "Advance method called with payload: {:?}",
             String::from_utf8_lossy(&payload)
         );
-        env.send_notice(payload.clone()).await?;
-        env.send_report(payload.clone()).await?;
+        env.send_notice(payload).await?;
+        env.send_report(payload).await?;
         env.send_voucher(metadata.sender, payload).await?;
         Ok(FinishStatus::Accept)
     }
