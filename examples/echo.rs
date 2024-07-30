@@ -54,7 +54,7 @@ mod tests {
 	#[async_std::test]
 	async fn test_echo() {
 		let app = EchoApp::new();
-		let tester = Tester::new(app);
+		let tester = Tester::new(app, MockupOptions::default());
 
 		let address = Address::default();
 

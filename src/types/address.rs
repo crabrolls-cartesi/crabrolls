@@ -12,6 +12,24 @@ macro_rules! address {
 #[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Default, Debug, Hash)]
 pub struct H160(pub [u8; 20]);
 
+impl H160 {
+	pub fn new(inner: [u8; 20]) -> Self {
+		H160(inner)
+	}
+
+	pub fn zero() -> Self {
+		H160([0u8; 20])
+	}
+
+	pub fn is_zero(&self) -> bool {
+		self.0.iter().all(|&x| x == 0)
+	}
+
+	pub fn as_bytes(&self) -> &[u8; 20] {
+		&self.0
+	}
+}
+
 impl std::fmt::Display for H160 {
 	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
 		write!(f, "0x{}", hex::encode(&self.0))

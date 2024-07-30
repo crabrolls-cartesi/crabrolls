@@ -176,7 +176,7 @@ mod tests {
 	#[async_std::test]
 	async fn test_add_post() {
 		let app = JsonApp::new();
-		let tester = Tester::new(app);
+		let tester = Tester::new(app, MockupOptions::default());
 
 		let add_payload = serde_json::to_vec(&Input::AddPost {
 			title: "First Post".into(),
@@ -211,7 +211,7 @@ mod tests {
 	#[async_std::test]
 	async fn test_update_post() {
 		let app = JsonApp::new();
-		let tester = Tester::new(app);
+		let tester = Tester::new(app, MockupOptions::default());
 
 		let add_payload = serde_json::to_vec(&Input::AddPost {
 			title: "First Post".into(),
@@ -255,7 +255,7 @@ mod tests {
 	#[async_std::test]
 	async fn test_delete_post() {
 		let app = JsonApp::new();
-		let tester = Tester::new(app);
+		let tester = Tester::new(app, MockupOptions::default());
 
 		let add_payload = serde_json::to_vec(&Input::AddPost {
 			title: "First Post".into(),
@@ -289,7 +289,7 @@ mod tests {
 	#[async_std::test]
 	async fn test_error_handling() {
 		let app = JsonApp::new();
-		let tester = Tester::new(app);
+		let tester = Tester::new(app, MockupOptions::default());
 
 		let update_payload = serde_json::to_vec(&Input::UpdatePost {
 			id: 1,

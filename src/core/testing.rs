@@ -3,6 +3,7 @@ use ethabi::Uint;
 use std::{error::Error, sync::Arc, time::UNIX_EPOCH};
 
 use crate::{
+	address,
 	types::{
 		address::Address,
 		machine::{Deposit, FinishStatus, Output, PortalHandlerConfig},
@@ -22,6 +23,7 @@ pub struct RollupMockup {
 	outputs: RwLock<Vec<Output>>,
 	input_index: Mutex<u64>,
 
+	app_address: Address,
 	address_book: AddressBook,
 	ether_wallet: Arc<RwLock<EtherWallet>>,
 }
@@ -32,7 +34,7 @@ impl RollupMockup {
 			outputs: RwLock::new(Vec::new()),
 			input_index: Mutex::new(0),
 			address_book: AddressBook::default(),
-
+			app_address: address!("0xab7528bb862fb57e8a2bcd567a2e929a0be56a5e"),
 			ether_wallet: Arc::new(RwLock::new(EtherWallet::new())),
 		}
 	}
@@ -102,7 +104,9 @@ impl EtherEnvironment for RollupMockup {
 
 	async fn ether_withdraw(&self, address: Address, value: Uint) -> Result<(), Box<dyn Error>> {
 		let mut ether_wallet = self.ether_wallet.write().await;
-		let _ = ether_wallet.withdraw(address, value)?;
+		let payload = ether_wallet.withdraw(address, value)?;
+
+		self.send_voucher(self.app_address, payload).await?;
 
 		Ok(())
 	}

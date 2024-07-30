@@ -78,7 +78,19 @@ mod tests {
 			.await;
 
 		assert_eq!(result.status, FinishStatus::Accept, "Expected Accept status");
-
 		assert_eq!(tester.ether_balance(address).await, units::wei::from_ether(6.0));
+		assert_eq!(tester.ether_addresses().await, vec![address]);
+
+		let result = tester
+			.deposit(Deposit::Ether {
+				sender: address,
+				amount: units::wei::from_ether(6.0),
+			})
+			.await;
+
+		assert_eq!(result.status, FinishStatus::Accept, "Expected Accept status");
+		assert_eq!(tester.ether_balance(address).await, units::wei::from_ether(0.0));
+		assert_eq!(tester.ether_addresses().await, vec![]);
+		assert_eq!(result.outputs.len(), 1);
 	}
 }
