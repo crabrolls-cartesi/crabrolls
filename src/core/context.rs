@@ -1,5 +1,6 @@
 use super::environment::Rollup;
-use super::{application::Application, environment::RollupEnvironment};
+use super::{application::Application, environment::RollupExtraEnvironment};
+use crate::types::machine::{Advance, Inspect};
 use crate::{
 	prelude::{Address, Deposit},
 	types::machine::{FinishStatus, Input, PortalHandlerConfig},
@@ -7,6 +8,7 @@ use crate::{
 };
 use std::error::Error;
 
+#[derive(Debug, Clone)]
 pub struct RunOptions {
 	pub rollup_url: &'static str,
 	pub address_book: AddressBook,
@@ -70,7 +72,7 @@ impl RunOptionsBuilder {
 	}
 }
 
-pub async fn handle_portals<R: RollupEnvironment>(
+pub async fn handle_portals<R: RollupExtraEnvironment>(
 	rollup: &R,
 	sender: Address,
 	payload: Vec<u8>,
@@ -103,19 +105,25 @@ pub async fn handle_portals<R: RollupEnvironment>(
 		}
 	}
 }
+
+pub fn is_portal<R: RollupExtraEnvironment>(rollup: &R, sender: Address) -> bool {
+	sender == rollup.get_address_book().ether_portal
+		|| sender == rollup.get_address_book().erc20_portal
+		|| sender == rollup.get_address_book().erc721_portal
+		|| sender == rollup.get_address_book().erc1155_single_portal
+		|| sender == rollup.get_address_book().erc1155_batch_portal
+}
 pub struct Supervisor;
 
 impl Supervisor {
 	pub async fn run(app: impl Application, options: RunOptions) -> Result<(), Box<dyn Error>> {
 		pretty_env_logger::init();
-
-		let rollup = Rollup::new(options.rollup_url, options.address_book);
-
+		let rollup = Rollup::new(options.rollup_url.clone(), options.address_book.clone());
 		let mut status = FinishStatus::Accept;
 
 		println!(
 			"Starting the application... Listening for inputs on {}",
-			options.rollup_url
+			options.rollup_url.clone()
 		);
 
 		loop {
@@ -123,53 +131,81 @@ impl Supervisor {
 
 			match input {
 				Some(Input::Advance(advance_input)) => {
-					debug!("New Advance input: {:?}", advance_input);
-
-					if advance_input.metadata.sender == rollup.get_address_book().app_address_relay {
-						debug!("Advance input from AppAddressRelay({})", advance_input.metadata.sender);
-						let new_app_address: Address = advance_input.payload.clone().try_into()?;
-						rollup.set_app_address(new_app_address).await;
-
-						continue;
-					}
-
-					let deposit: Option<Deposit> =
-						handle_portals(&rollup, advance_input.metadata.sender, advance_input.payload.clone()).await?;
-
-					if deposit.is_some() {
-						debug!("Deposited: {:?}", deposit);
-					}
-
-					match app
-						.advance(&rollup, advance_input.metadata, &advance_input.payload, deposit)
-						.await
-					{
-						Ok(result_status) => {
-							debug!("Advance status: {:?}", result_status);
-							status = result_status;
-						}
-						Err(e) => {
-							error!("Error in advance: {}", e);
-							status = FinishStatus::Reject;
-						}
-					}
+					status = Self::handle_advance_input(&rollup, &options, &app, advance_input).await?;
 				}
 				Some(Input::Inspect(inspect_input)) => {
-					debug!("Inspect input: {:?}", inspect_input);
-					match app.inspect(&rollup, &inspect_input.payload).await {
-						Ok(result_status) => {
-							debug!("Inspect status: {:?}", result_status);
-							status = result_status;
-						}
-						Err(e) => {
-							error!("Error in inspect: {}", e);
-							status = FinishStatus::Reject;
-						}
-					}
+					status = Self::handle_inspect_input(&rollup, &app, inspect_input).await?;
 				}
 				None => {
 					debug!("Waiting for next input");
 				}
+			}
+		}
+	}
+
+	async fn handle_advance_input(
+		rollup: &Rollup,
+		options: &RunOptions,
+		app: &impl Application,
+		advance_input: Advance,
+	) -> Result<FinishStatus, Box<dyn Error>> {
+		debug!("New Advance input: {:?}", advance_input);
+
+		if advance_input.metadata.sender == rollup.get_address_book().app_address_relay {
+			debug!("Advance input from AppAddressRelay({})", advance_input.metadata.sender);
+			let new_app_address: Address = advance_input.payload.clone().try_into()?;
+			rollup.set_app_address(new_app_address).await;
+			return Ok(FinishStatus::Accept);
+		}
+
+		let mut deposit: Option<Deposit> = None;
+
+		if let PortalHandlerConfig::Handle { .. } = options.portal_config {
+			deposit = handle_portals(rollup, advance_input.metadata.sender, advance_input.payload.clone()).await?;
+		} else if is_portal(rollup, advance_input.metadata.sender)
+			&& options.portal_config == PortalHandlerConfig::Dispense
+		{
+			debug!("Dispensing the deposit and discarding the advance input");
+			return Ok(FinishStatus::Accept);
+		}
+
+		if deposit.is_some() {
+			debug!("Deposited: {:?}", deposit);
+
+			if options.portal_config == (PortalHandlerConfig::Handle { advance: false }) {
+				return Ok(FinishStatus::Accept);
+			}
+		}
+
+		match app
+			.advance(rollup, advance_input.metadata, &advance_input.payload, deposit)
+			.await
+		{
+			Ok(result_status) => {
+				debug!("Advance status: {:?}", result_status);
+				Ok(result_status)
+			}
+			Err(e) => {
+				error!("Error in advance: {}", e);
+				Ok(FinishStatus::Reject)
+			}
+		}
+	}
+
+	async fn handle_inspect_input(
+		rollup: &Rollup,
+		app: &impl Application,
+		inspect_input: Inspect,
+	) -> Result<FinishStatus, Box<dyn Error>> {
+		debug!("Inspect input: {:?}", inspect_input);
+		match app.inspect(rollup, &inspect_input.payload).await {
+			Ok(result_status) => {
+				debug!("Inspect status: {:?}", result_status);
+				Ok(result_status)
+			}
+			Err(e) => {
+				error!("Error in inspect: {}", e);
+				Ok(FinishStatus::Reject)
 			}
 		}
 	}

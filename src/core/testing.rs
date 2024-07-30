@@ -15,7 +15,7 @@ use crate::{
 use super::{
 	context::handle_portals,
 	contracts::ether::{EtherEnvironment, EtherWallet},
-	environment::RollupEnvironment,
+	environment::RollupExtraEnvironment,
 };
 
 pub struct RollupMockup {
@@ -161,7 +161,7 @@ impl MockupOptionsBuilder {
 	}
 }
 
-impl RollupEnvironment for RollupMockup {
+impl RollupExtraEnvironment for RollupMockup {
 	fn get_address_book(&self) -> AddressBook {
 		self.address_book.clone()
 	}
@@ -205,22 +205,48 @@ where
 			timestamp: UNIX_EPOCH.elapsed().unwrap().as_secs(),
 		};
 
-		let deposit = handle_portals(&self.env, sender, deposit.into())
-			.await
-			.expect("Failed to handle deposit payload")
-			.expect("No deposit returned");
+		let (status, error) = match self.mockup_options.portal_config {
+			PortalHandlerConfig::Dispense => (FinishStatus::Accept, None),
+			PortalHandlerConfig::Ignore => {
+				let payload: Vec<u8> = deposit.into();
+				match self
+					.app
+					.advance(&self.env, metadata.clone(), payload.as_slice(), None)
+					.await
+				{
+					Ok(finish_status) => (finish_status, None),
+					Err(e) => (FinishStatus::Reject, Some(e)),
+				}
+			}
+			PortalHandlerConfig::Handle { advance } => {
+				let deposit_payload = handle_portals(&self.env, sender, deposit.into())
+					.await
+					.expect("Failed to handle deposit payload")
+					.expect("No deposit returned");
 
-		let (status, error) = match self.app.advance(&self.env, metadata.clone(), &[], Some(deposit)).await {
-			Ok(finish_status) => (finish_status, None),
-			Err(e) => (FinishStatus::Reject, Some(e)),
+				if advance {
+					match self
+						.app
+						.advance(&self.env, metadata.clone(), &[], Some(deposit_payload))
+						.await
+					{
+						Ok(finish_status) => (finish_status, None),
+						Err(e) => (FinishStatus::Reject, Some(e)),
+					}
+				} else {
+					(FinishStatus::Accept, None)
+				}
+			}
+		};
+
+		let outputs = match self.env.advance(status).await {
+			Ok(Some(outputs)) => outputs,
+			_ => Vec::new(),
 		};
 
 		AdvanceResult {
 			status,
-			outputs: match self.env.advance(status).await {
-				Ok(Some(outputs)) => outputs,
-				_ => Vec::new(),
-			},
+			outputs,
 			metadata,
 			error,
 		}

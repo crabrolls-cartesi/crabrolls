@@ -23,7 +23,7 @@ pub trait Environment: EtherEnvironment {
 	fn send_report(&self, payload: impl AsRef<[u8]> + Send) -> impl Future<Output = Result<(), Box<dyn Error>>> + Send;
 }
 
-pub trait RollupEnvironment {
+pub trait RollupExtraEnvironment {
 	fn get_address_book(&self) -> AddressBook;
 	fn get_ether_wallet(&self) -> Arc<RwLock<EtherWallet>>;
 }
@@ -52,7 +52,7 @@ impl Rollup {
 	}
 }
 
-impl RollupEnvironment for Rollup {
+impl RollupExtraEnvironment for Rollup {
 	fn get_address_book(&self) -> AddressBook {
 		self.address_book.clone()
 	}

@@ -109,13 +109,13 @@ impl From<Deposit> for Vec<u8> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PortalHandlerConfig {
-	Handle,   // Handle the portals and return the deposit to the app
-	Ignore,   // Ignore the deposit handle and pass the payload to the app
-	Dispense, // Dispense the deposit and discard the advance input
+	Handle { advance: bool }, // Handle the portals and pass the payload to the app if advance is true
+	Ignore,                   // Ignore the deposit handle and pass the payload to the app
+	Dispense,                 // Dispense the deposit and discard the advance input
 }
 
 impl Default for PortalHandlerConfig {
 	fn default() -> Self {
-		Self::Handle
+		Self::Handle { advance: true }
 	}
 }
