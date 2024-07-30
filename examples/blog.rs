@@ -144,7 +144,7 @@ impl Application for JsonApp {
 async fn main() {
 	let app = JsonApp::new();
 	let options = RunOptions::default();
-	if let Err(e) = run(app, options).await {
+	if let Err(e) = Supervisor::run(app, options).await {
 		eprintln!("Error: {}", e);
 	}
 }

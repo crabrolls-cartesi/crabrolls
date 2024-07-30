@@ -12,15 +12,15 @@ use types::machine::{FinishStatus, Metadata};
 pub mod prelude {
 	pub use crate::core::{
 		application::Application,
-		context::{run, RunOptions},
+		context::{RunOptions, Supervisor},
 		environment::Environment,
-		testing::Tester,
+		testing::{MockupOptions, Tester},
 	};
 
 	pub use crate::types::{
 		address::Address,
-		machine::{Deposit, FinishStatus, Metadata, Output},
+		machine::{Deposit, FinishStatus, Metadata, Output, PortalHandlerConfig},
 	};
 
-	pub use crate::utils::units;
+	pub use crate::utils::{address_book::AddressBook, units};
 }

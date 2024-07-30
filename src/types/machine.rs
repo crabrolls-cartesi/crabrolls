@@ -1,4 +1,4 @@
-use crate::{types::address::Address, utils::parsers::deserializers::*};
+use crate::{core::contracts::ether::EtherWallet, types::address::Address, utils::parsers::deserializers::*};
 use ethabi::Uint;
 use serde::{Deserialize, Serialize};
 
@@ -18,7 +18,7 @@ pub enum FinishStatus {
 	Reject,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Advance {
 	pub metadata: Metadata,
 	#[serde(deserialize_with = "deserialize_string_of_bytes")]
@@ -83,4 +83,39 @@ pub enum Deposit {
 		ids: Vec<Uint>,
 		amounts: Vec<Uint>,
 	},
+}
+
+impl From<Deposit> for Vec<u8> {
+	fn from(deposit: Deposit) -> Self {
+		match deposit {
+			Deposit::Ether { sender, amount } => EtherWallet::deposit_payload(sender, amount),
+			Deposit::ERC20 { sender, token, amount } => todo!(),
+			Deposit::ERC721 { sender, token, id } => todo!(),
+			Deposit::ERC1155Single {
+				sender,
+				token,
+				id,
+				amount,
+			} => todo!(),
+			Deposit::ERC1155Batch {
+				sender,
+				token,
+				ids,
+				amounts,
+			} => todo!(),
+		}
+	}
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum PortalHandlerConfig {
+	Handle,   // Handle the portals and return the deposit to the app
+	Ignore,   // Ignore the deposit handle and pass the payload to the app
+	Dispense, // Dispense the deposit and discard the advance input
+}
+
+impl Default for PortalHandlerConfig {
+	fn default() -> Self {
+		Self::Handle
+	}
 }

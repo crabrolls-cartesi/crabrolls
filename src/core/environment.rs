@@ -1,4 +1,4 @@
-use super::contracts::ether::EtherWallet;
+use super::contracts::ether::{EtherEnvironment, EtherWallet};
 use crate::types::machine::{Advance, FinishStatus, Input, Inspect, Output};
 use crate::utils::address_book::AddressBook;
 use crate::{types::address::Address, utils::requests::ClientWrapper};
@@ -7,9 +7,10 @@ use ethabi::Uint;
 use serde_json::Value;
 use std::error::Error;
 use std::future::Future;
+use std::ops::Add;
 use std::sync::Arc;
 
-pub trait Environment {
+pub trait Environment: EtherEnvironment {
 	fn send_voucher(
 		&self,
 		destination: Address,
@@ -20,39 +21,44 @@ pub trait Environment {
 		-> impl Future<Output = Result<i32, Box<dyn Error>>> + Send;
 
 	fn send_report(&self, payload: impl AsRef<[u8]> + Send) -> impl Future<Output = Result<(), Box<dyn Error>>> + Send;
+}
 
-	fn ether_addresses(&self) -> impl Future<Output = Vec<Address>> + Send;
-	fn ether_withdraw(&self, address: Address, value: Uint) -> impl Future<Output = Result<(), Box<dyn Error>>> + Send;
-	fn ether_transfer(
-		&self,
-		source: Address,
-		destination: Address,
-		value: Uint,
-	) -> impl Future<Output = Result<(), Box<dyn Error>>> + Send;
-	fn ether_balance(&self, address: Address) -> impl Future<Output = Uint> + Send;
+pub trait RollupEnvironment {
+	fn get_address_book(&self) -> AddressBook;
+	fn get_ether_wallet(&self) -> Arc<RwLock<EtherWallet>>;
 }
 
 pub struct Rollup {
 	client: ClientWrapper,
-	app_address: Option<Address>,
+	app_address: Arc<RwLock<Option<Address>>>,
 
-	pub address_book: AddressBook,
-	pub ether_wallet: Arc<RwLock<EtherWallet>>,
+	address_book: AddressBook,
+	ether_wallet: Arc<RwLock<EtherWallet>>,
 }
 
 impl Rollup {
-	pub fn new(url: String) -> Self {
+	pub fn new(url: &'static str, address_book: AddressBook) -> Self {
 		Self {
-			client: ClientWrapper::new(url),
-			app_address: None,
-			address_book: AddressBook::default(),
+			client: ClientWrapper::new(url.into()),
+			app_address: Arc::new(RwLock::new(None)),
+			address_book: address_book,
 			ether_wallet: Arc::new(RwLock::new(EtherWallet::new())),
 		}
 	}
 
-	pub fn set_app_address(&mut self, address: Address) {
+	pub async fn set_app_address(&self, address: Address) {
 		debug!("Setting app address to: {}", address);
-		self.app_address = Some(address);
+		self.app_address.write().await.replace(address);
+	}
+}
+
+impl RollupEnvironment for Rollup {
+	fn get_address_book(&self) -> AddressBook {
+		self.address_book.clone()
+	}
+
+	fn get_ether_wallet(&self) -> Arc<RwLock<EtherWallet>> {
+		self.ether_wallet.clone()
 	}
 }
 
@@ -87,27 +93,31 @@ impl Environment for Rollup {
 		self.client.post("report", &report).await?;
 		Ok(())
 	}
+}
 
+impl EtherEnvironment for Rollup {
 	async fn ether_addresses(&self) -> Vec<Address> {
 		self.ether_wallet.read().await.addresses()
 	}
 
 	async fn ether_withdraw(&self, address: Address, value: Uint) -> Result<(), Box<dyn Error>> {
-		if self.app_address.is_none() {
+		let app_address = self.app_address.read().await;
+		if app_address.is_none() {
 			return Err(Box::from("App address is not set"));
 		}
 
 		let mut ether_wallet = self.ether_wallet.write().await;
 		let payload = ether_wallet.withdraw(address, value)?;
 
-		self.send_voucher(self.app_address.expect("App address is not set"), payload)
+		self.send_voucher(app_address.expect("App address is not set"), payload)
 			.await?;
 
 		Ok(())
 	}
 
 	async fn ether_transfer(&self, source: Address, destination: Address, value: Uint) -> Result<(), Box<dyn Error>> {
-		if self.app_address.is_none() {
+		let app_address = self.app_address.read().await;
+		if app_address.is_none() {
 			return Err(Box::from("App address is not set"));
 		}
 

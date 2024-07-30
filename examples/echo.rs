@@ -41,7 +41,7 @@ impl Application for EchoApp {
 async fn main() {
 	let app = EchoApp::new();
 	let options = RunOptions::default();
-	if let Err(e) = run(app, options).await {
+	if let Err(e) = Supervisor::run(app, options).await {
 		eprintln!("Error: {}", e);
 	}
 }

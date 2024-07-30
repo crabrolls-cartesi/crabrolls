@@ -4,6 +4,7 @@ use crate::utils::abi::encode;
 use ethabi::Uint;
 use std::collections::HashMap;
 use std::error::Error;
+use std::future::Future;
 
 pub struct EtherWallet {
 	balance: HashMap<Address, Uint>,
@@ -50,6 +51,17 @@ impl EtherWallet {
 		Ok((deposit, payload[52..].to_vec()))
 	}
 
+	pub fn deposit_payload(sender: Address, value: Uint) -> Vec<u8> {
+		let mut value_bytes = vec![0u8; 32];
+		value.to_big_endian(&mut value_bytes);
+
+		let mut payload = vec![0u8; 52];
+		payload[0..20].copy_from_slice(&sender.0);
+		payload[20..52].copy_from_slice(&value_bytes);
+
+		payload
+	}
+
 	pub fn transfer(&mut self, src: Address, dst: Address, value: Uint) -> Result<(), Box<dyn Error>> {
 		if src == dst {
 			return Err("can't transfer to self".into());
@@ -77,6 +89,18 @@ impl EtherWallet {
 
 		Ok(encode::ether::withdraw(address, value)?)
 	}
+}
+
+pub trait EtherEnvironment: Send + Sync {
+	fn ether_addresses(&self) -> impl Future<Output = Vec<Address>> + Send;
+	fn ether_withdraw(&self, address: Address, value: Uint) -> impl Future<Output = Result<(), Box<dyn Error>>> + Send;
+	fn ether_transfer(
+		&self,
+		source: Address,
+		destination: Address,
+		value: Uint,
+	) -> impl Future<Output = Result<(), Box<dyn Error>>> + Send;
+	fn ether_balance(&self, address: Address) -> impl Future<Output = Uint> + Send;
 }
 
 #[cfg(test)]

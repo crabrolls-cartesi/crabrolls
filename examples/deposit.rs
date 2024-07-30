@@ -53,7 +53,7 @@ impl Application for DepositApp {
 async fn main() {
 	let app = DepositApp::new();
 	let options = RunOptions::default();
-	if let Err(e) = run(app, options).await {
+	if let Err(e) = Supervisor::run(app, options).await {
 		eprintln!("Error: {}", e);
 	}
 }
@@ -66,41 +66,19 @@ mod tests {
 	#[async_std::test]
 	async fn test_echo() {
 		let app = DepositApp::new();
-		let tester = Tester::new(app);
+		let tester = Tester::new(app, MockupOptions::default());
 
 		let address = Address::default();
 
-		let payload = b"Hi Crabrolls!".to_vec();
-		let result = tester.advance(address, payload.clone()).await;
+		let result = tester
+			.deposit(Deposit::Ether {
+				sender: address,
+				amount: units::wei::from_ether(6.0),
+			})
+			.await;
 
 		assert_eq!(result.status, FinishStatus::Accept, "Expected Accept status");
 
-		assert!(result.error.is_none(), "Expected no error");
-
-		assert_eq!(
-			result.outputs.len(),
-			3,
-			"Expected 3 outputs, got {}",
-			result.outputs.len()
-		);
-
-		assert_eq!(
-			result.outputs,
-			vec![
-				Output::Notice {
-					payload: payload.clone()
-				},
-				Output::Report {
-					payload: payload.clone()
-				},
-				Output::Voucher {
-					destination: address,
-					payload: payload.clone()
-				}
-			],
-			"Expected outputs to match"
-		);
-
-		assert_eq!(result.metadata.sender, Address::default(), "Unexpected sender address");
+		assert_eq!(tester.ether_balance(address).await, units::wei::from_ether(6.0));
 	}
 }
