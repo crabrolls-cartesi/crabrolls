@@ -118,12 +118,12 @@ pub struct Supervisor;
 impl Supervisor {
 	pub async fn run(app: impl Application, options: RunOptions) -> Result<(), Box<dyn Error>> {
 		pretty_env_logger::init();
-		let rollup = Rollup::new(options.rollup_url.clone(), options.address_book.clone());
+		let rollup = Rollup::new(options.rollup_url, options.address_book.clone());
 		let mut status = FinishStatus::Accept;
 
 		println!(
 			"Starting the application... Listening for inputs on {}",
-			options.rollup_url.clone()
+			options.rollup_url
 		);
 
 		loop {
