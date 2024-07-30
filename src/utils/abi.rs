@@ -88,12 +88,12 @@ mod tests {
 		"#;
 
 		let function_name = "transfer";
-		let address = address!("0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef");
+		let address = address!("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
 		let value = Uint::from(1000);
 		let params = vec![Token::Address(address.into()), Token::Uint(value)];
 
 		let encoded = encode::function_call(abi_json, function_name, params).expect("encoding failed");
-		let expected = hex::decode("a9059cbb000000000000000000000000abcdefabcdefabcdefabcdefabcdefabcdefabcdef00000000000000000000000000000000000000000000000000000000000003e8").expect("decoding failed");
+		let expected = hex::decode("a9059cbb000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb9226600000000000000000000000000000000000000000000000000000000000003e8").expect("decoding failed");
 
 		assert_eq!(encoded, expected);
 	}
