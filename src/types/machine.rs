@@ -1,4 +1,8 @@
-use crate::{core::contracts::ether::EtherWallet, types::address::Address, utils::parsers::deserializers::*};
+use crate::{
+	core::contracts::{erc20::ERC20Wallet, ether::EtherWallet},
+	types::address::Address,
+	utils::parsers::deserializers::*,
+};
 use ethabi::Uint;
 use serde::{Deserialize, Serialize};
 
@@ -89,7 +93,7 @@ impl From<Deposit> for Vec<u8> {
 	fn from(deposit: Deposit) -> Self {
 		match deposit {
 			Deposit::Ether { sender, amount } => EtherWallet::deposit_payload(sender, amount),
-			Deposit::ERC20 { sender, token, amount } => todo!(),
+			Deposit::ERC20 { sender, token, amount } => ERC20Wallet::deposit_payload(sender, token, amount),
 			Deposit::ERC721 { sender, token, id } => todo!(),
 			Deposit::ERC1155Single {
 				sender,

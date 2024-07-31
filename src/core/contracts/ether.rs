@@ -36,7 +36,7 @@ impl EtherWallet {
 	}
 
 	pub fn deposit(&mut self, payload: Vec<u8>) -> Result<(Deposit, Vec<u8>), Box<dyn Error>> {
-		if payload.len() < 52 {
+		if payload.len() < 20 + 32 {
 			return Err("invalid eth deposit size".into());
 		}
 
@@ -91,16 +91,16 @@ impl EtherWallet {
 	}
 }
 
-pub trait EtherEnvironment: Send + Sync {
-	fn ether_addresses(&self) -> impl Future<Output = Vec<Address>> + Send;
-	fn ether_withdraw(&self, address: Address, value: Uint) -> impl Future<Output = Result<(), Box<dyn Error>>> + Send;
+pub trait EtherEnvironment {
+	fn ether_addresses(&self) -> impl Future<Output = Vec<Address>>;
+	fn ether_withdraw(&self, address: Address, value: Uint) -> impl Future<Output = Result<(), Box<dyn Error>>>;
 	fn ether_transfer(
 		&self,
 		source: Address,
 		destination: Address,
 		value: Uint,
-	) -> impl Future<Output = Result<(), Box<dyn Error>>> + Send;
-	fn ether_balance(&self, address: Address) -> impl Future<Output = Uint> + Send;
+	) -> impl Future<Output = Result<(), Box<dyn Error>>>;
+	fn ether_balance(&self, address: Address) -> impl Future<Output = Uint>;
 }
 
 #[cfg(test)]
@@ -223,6 +223,7 @@ mod tests {
 		let encoded_withdraw = wallet.withdraw(address, Uint::from(50u64)).unwrap();
 
 		assert_eq!(wallet.balance_of(address), Uint::from(50u64));
+		assert_eq!(encoded_withdraw.len(), 68);
 	}
 
 	#[test]
@@ -246,7 +247,7 @@ mod tests {
 		value.to_big_endian(&mut value_bytes);
 
 		let mut payload = vec![0u8; 52];
-		payload[0..20].copy_from_slice(&address.0);
+		payload[0..20].copy_from_slice(address.as_ref());
 		payload[20..52].copy_from_slice(&value_bytes);
 
 		let result = wallet.deposit(payload);

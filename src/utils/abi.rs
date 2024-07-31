@@ -44,6 +44,37 @@ pub mod encode {
 			function_call(abi_json, "withdrawEther", params)
 		}
 	}
+
+	pub mod erc20 {
+		use super::*;
+
+		pub fn withdraw(address: Address, value: Uint) -> Result<Vec<u8>, Box<dyn Error>> {
+			let abi_json = r#"
+			[
+				{
+					"name": "transfer",
+					"inputs": [
+						{
+							"internalType": "address",
+							"name": "_receiver",
+							"type": "address"
+						},
+						{
+							"internalType": "uint256",
+							"name": "_value",
+							"type": "uint256"
+						}
+					],
+					"outputs": [],
+					"type": "function"
+				}
+			]"#;
+
+			let params = vec![Token::Address(address.into()), Token::Uint(value)];
+
+			function_call(abi_json, "withdraw", params)
+		}
+	}
 }
 
 #[cfg(test)]

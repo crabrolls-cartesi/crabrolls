@@ -1,3 +1,4 @@
+use super::contracts::erc20::{ERC20Environment, ERC20Wallet};
 use super::contracts::ether::{EtherEnvironment, EtherWallet};
 use crate::types::machine::{Advance, FinishStatus, Input, Inspect, Output};
 use crate::utils::address_book::AddressBook;
@@ -34,6 +35,7 @@ pub struct Rollup {
 
 	address_book: AddressBook,
 	ether_wallet: Arc<RwLock<EtherWallet>>,
+	erc20_wallet: Arc<RwLock<ERC20Wallet>>,
 }
 
 impl Rollup {
@@ -43,6 +45,7 @@ impl Rollup {
 			app_address: Arc::new(RwLock::new(None)),
 			address_book: address_book,
 			ether_wallet: Arc::new(RwLock::new(EtherWallet::new())),
+			erc20_wallet: Arc::new(RwLock::new(ERC20Wallet::new())),
 		}
 	}
 
@@ -129,6 +132,43 @@ impl EtherEnvironment for Rollup {
 
 	async fn ether_balance(&self, address: Address) -> Uint {
 		self.ether_wallet.read().await.balance_of(address)
+	}
+}
+
+impl ERC20Environment for Rollup {
+	async fn erc20_addresses(&self) -> Vec<Address> {
+		self.erc20_wallet.read().await.addresses()
+	}
+
+	async fn erc20_withdraw(
+		&self,
+		wallet_address: Address,
+		token_address: Address,
+		value: Uint,
+	) -> Result<(), Box<dyn Error>> {
+		let mut erc20_wallet = self.erc20_wallet.write().await;
+		let payload = erc20_wallet.withdraw(wallet_address, token_address, value)?;
+
+		self.send_voucher(token_address, payload).await?;
+
+		Ok(())
+	}
+
+	async fn erc20_transfer(
+		&self,
+		src_wallet: Address,
+		dst_wallet: Address,
+		token_address: Address,
+		value: Uint,
+	) -> Result<(), Box<dyn Error>> {
+		let mut erc20_wallet = self.erc20_wallet.write().await;
+		erc20_wallet.transfer(src_wallet, dst_wallet, token_address, value)?;
+
+		Ok(())
+	}
+
+	async fn erc20_balance(&self, wallet_address: Address, token_address: Address) -> Uint {
+		self.erc20_wallet.read().await.balance_of(wallet_address, token_address)
 	}
 }
 

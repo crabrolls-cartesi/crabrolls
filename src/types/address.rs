@@ -90,6 +90,12 @@ impl From<H160> for [u8; 20] {
 	}
 }
 
+impl AsRef<[u8; 20]> for H160 {
+	fn as_ref(&self) -> &[u8; 20] {
+		&self.0
+	}
+}
+
 impl From<H160> for Vec<u8> {
 	fn from(address: H160) -> Self {
 		address.0.to_vec()

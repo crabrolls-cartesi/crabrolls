@@ -1,7 +1,10 @@
 use crate::types::address::Address;
+use crate::types::machine::Deposit;
+use crate::utils::abi::encode;
 use ethabi::Uint;
 use std::collections::HashMap;
 use std::error::Error;
+use std::future::Future;
 
 pub struct ERC20Wallet {
 	balance: HashMap<(Address, Address), Uint>,
@@ -12,6 +15,12 @@ impl ERC20Wallet {
 		ERC20Wallet {
 			balance: HashMap::new(),
 		}
+	}
+
+	pub fn addresses(&self) -> Vec<Address> {
+		let mut addresses: Vec<Address> = self.balance.keys().map(|(a, _)| a.clone()).collect();
+		addresses.sort_by(|a, b| a.cmp(b));
+		addresses
 	}
 
 	pub fn set_balance(&mut self, wallet_address: Address, token_address: Address, value: Uint) {
@@ -54,15 +63,37 @@ impl ERC20Wallet {
 		Ok(())
 	}
 
-	pub fn deposit(
-		&mut self,
-		wallet_address: Address,
-		token_address: Address,
-		value: Uint,
-	) -> Result<(), Box<dyn Error>> {
+	pub fn deposit(&mut self, payload: Vec<u8>) -> Result<(Deposit, Vec<u8>), Box<dyn Error>> {
+		if payload.len() < 20 + 20 + 32 {
+			return Err("invalid erc20 deposit size".into());
+		}
+
+		let wallet_address = payload[0..20].into();
+		let token_address = payload[20..40].into();
+		let value = Uint::from_big_endian(&payload[40..72]);
+
 		let new_balance = self.balance_of(wallet_address, token_address) + value;
 		self.set_balance(wallet_address, token_address, new_balance);
-		Ok(())
+
+		let deposit = Deposit::ERC20 {
+			sender: wallet_address,
+			token: token_address,
+			amount: value,
+		};
+
+		Ok((deposit, payload[72..].to_vec()))
+	}
+
+	pub fn deposit_payload(wallet_address: Address, token_address: Address, value: Uint) -> Vec<u8> {
+		let mut value_bytes = vec![0u8; 32];
+		value.to_big_endian(&mut value_bytes);
+
+		let mut payload = vec![0u8; 72];
+		payload[0..20].copy_from_slice(wallet_address.as_ref());
+		payload[20..40].copy_from_slice(token_address.as_ref());
+		payload[40..72].copy_from_slice(&value_bytes);
+
+		payload
 	}
 
 	pub fn withdraw(
@@ -70,7 +101,7 @@ impl ERC20Wallet {
 		wallet_address: Address,
 		token_address: Address,
 		value: Uint,
-	) -> Result<(), Box<dyn Error>> {
+	) -> Result<Vec<u8>, Box<dyn Error>> {
 		let new_balance = self
 			.balance_of(wallet_address, token_address)
 			.checked_sub(value)
@@ -78,8 +109,26 @@ impl ERC20Wallet {
 
 		self.set_balance(wallet_address, token_address, new_balance);
 
-		Ok(())
+		Ok(encode::erc20::withdraw(wallet_address, value)?)
 	}
+}
+
+pub trait ERC20Environment {
+	fn erc20_addresses(&self) -> impl Future<Output = Vec<Address>>;
+	fn erc20_withdraw(
+		&self,
+		wallet_address: Address,
+		token_address: Address,
+		value: Uint,
+	) -> impl Future<Output = Result<(), Box<dyn Error>>>;
+	fn erc20_transfer(
+		&self,
+		src_wallet: Address,
+		dst_wallet: Address,
+		token_address: Address,
+		value: Uint,
+	) -> impl Future<Output = Result<(), Box<dyn Error>>>;
+	fn erc20_balance(&self, wallet_address: Address, token_address: Address) -> impl Future<Output = Uint>;
 }
 
 #[cfg(test)]
@@ -155,10 +204,32 @@ mod tests {
 		let token_address = address!("0x0000000000000000000000000000000000000002");
 		let value = Uint::from(1_000_000_000_000_000_000u64);
 
-		let result = wallet.deposit(wallet_address, token_address, value);
+		let mut value_bytes = vec![0u8; 32];
+		value.to_big_endian(&mut value_bytes);
+
+		let mut payload = vec![0u8; 72];
+
+		payload[0..20].copy_from_slice(wallet_address.as_bytes());
+		payload[20..40].copy_from_slice(token_address.as_bytes());
+		payload[40..72].copy_from_slice(&value_bytes);
+
+		let result = wallet.deposit(payload.to_vec());
 
 		assert!(result.is_ok());
+
+		let (deposit, remaining_payload) = result.expect("deposit failed");
+
+		if let Deposit::ERC20 { sender, token, amount } = deposit {
+			assert_eq!(sender, wallet_address);
+			assert_eq!(token, token_address);
+			assert_eq!(amount, value);
+		} else {
+			panic!("invalid deposit type");
+		}
+
 		assert_eq!(wallet.balance_of(wallet_address, token_address), value);
+
+		assert!(remaining_payload.is_empty());
 	}
 
 	#[test]
