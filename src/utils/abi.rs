@@ -75,6 +75,46 @@ pub mod encode {
 			function_call(abi_json, "withdraw", params)
 		}
 	}
+
+	pub mod erc721 {
+		use super::*;
+
+		pub fn withdraw(dapp_address: Address, address: Address, token_id: Uint) -> Result<Vec<u8>, Box<dyn Error>> {
+			let abi_json = r#"
+			[
+				{
+					"name": "safeTransferFrom",
+					"inputs": [
+						{
+							"internalType": "address",
+							"name": "_from",
+							"type": "address"
+						},
+						{
+							"internalType": "address",
+							"name": "_to",
+							"type": "address"
+						},
+						{
+							"internalType": "uint256",
+							"name": "_tokenId",
+							"type": "uint256"
+						}
+					],
+					"outputs": [],
+					"type": "function"
+				}
+			]"#;
+
+			let params = vec![
+				Token::Address(dapp_address.into()),
+				Token::Address(address.into()),
+				Token::Uint(token_id),
+			];
+
+			function_call(abi_json, "safeTransferFrom", params)
+		}
+	}
 }
 
 #[cfg(test)]

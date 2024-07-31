@@ -1,4 +1,5 @@
 use super::contracts::erc20::{ERC20Environment, ERC20Wallet};
+use super::contracts::erc721::{ERC721Environment, ERC721Wallet};
 use super::contracts::ether::{EtherEnvironment, EtherWallet};
 use crate::types::machine::{Advance, FinishStatus, Input, Inspect, Output};
 use crate::utils::address_book::AddressBook;
@@ -11,7 +12,7 @@ use std::future::Future;
 use std::ops::Add;
 use std::sync::Arc;
 
-pub trait Environment: EtherEnvironment {
+pub trait Environment: EtherEnvironment + ERC20Environment + ERC721Environment {
 	fn send_voucher(
 		&self,
 		destination: Address,
@@ -36,6 +37,7 @@ pub struct Rollup {
 	address_book: AddressBook,
 	ether_wallet: Arc<RwLock<EtherWallet>>,
 	erc20_wallet: Arc<RwLock<ERC20Wallet>>,
+	erc721_wallet: Arc<RwLock<ERC721Wallet>>,
 }
 
 impl Rollup {
@@ -46,6 +48,7 @@ impl Rollup {
 			address_book: address_book,
 			ether_wallet: Arc::new(RwLock::new(EtherWallet::new())),
 			erc20_wallet: Arc::new(RwLock::new(ERC20Wallet::new())),
+			erc721_wallet: Arc::new(RwLock::new(ERC721Wallet::new())),
 		}
 	}
 
@@ -169,6 +172,53 @@ impl ERC20Environment for Rollup {
 
 	async fn erc20_balance(&self, wallet_address: Address, token_address: Address) -> Uint {
 		self.erc20_wallet.read().await.balance_of(wallet_address, token_address)
+	}
+}
+
+impl ERC721Environment for Rollup {
+	async fn erc721_addresses(&self) -> Vec<Address> {
+		self.erc721_wallet.read().await.addresses()
+	}
+
+	async fn erc721_withdraw(
+		&self,
+		wallet_address: Address,
+		token_address: Address,
+		token_id: Uint,
+	) -> Result<(), Box<dyn Error>> {
+		let app_address = self.app_address.read().await;
+		if app_address.is_none() {
+			return Err(Box::from("App address is not set"));
+		}
+
+		let mut erc721_wallet = self.erc721_wallet.write().await;
+		let payload = erc721_wallet.withdraw(
+			app_address.expect("App address is not set"),
+			wallet_address,
+			token_address,
+			token_id,
+		)?;
+
+		self.send_voucher(token_address, payload).await?;
+
+		Ok(())
+	}
+
+	async fn erc721_transfer(
+		&self,
+		src_wallet: Address,
+		dst_wallet: Address,
+		token_address: Address,
+		token_id: Uint,
+	) -> Result<(), Box<dyn Error>> {
+		let mut erc721_wallet = self.erc721_wallet.write().await;
+		erc721_wallet.transfer(src_wallet, dst_wallet, token_address, token_id)?;
+
+		Ok(())
+	}
+
+	async fn erc721_owner_of(&self, token_address: Address, token_id: Uint) -> Option<Address> {
+		self.erc721_wallet.read().await.owner_of(token_address, token_id)
 	}
 }
 

@@ -17,6 +17,7 @@ use super::{
 	context::handle_portals,
 	contracts::{
 		erc20::{ERC20Environment, ERC20Wallet},
+		erc721::{ERC721Environment, ERC721Wallet},
 		ether::{EtherEnvironment, EtherWallet},
 	},
 	environment::RollupExtraEnvironment,
@@ -25,11 +26,12 @@ use super::{
 pub struct RollupMockup {
 	outputs: RwLock<Vec<Output>>,
 	input_index: Mutex<u64>,
-
 	app_address: Address,
 	address_book: AddressBook,
+
 	ether_wallet: Arc<RwLock<EtherWallet>>,
 	erc20_wallet: Arc<RwLock<ERC20Wallet>>,
+	erc721_wallet: Arc<RwLock<ERC721Wallet>>,
 }
 
 impl RollupMockup {
@@ -41,6 +43,7 @@ impl RollupMockup {
 			app_address: address!("0xab7528bb862fb57e8a2bcd567a2e929a0be56a5e"),
 			ether_wallet: Arc::new(RwLock::new(EtherWallet::new())),
 			erc20_wallet: Arc::new(RwLock::new(ERC20Wallet::new())),
+			erc721_wallet: Arc::new(RwLock::new(ERC721Wallet::new())),
 		}
 	}
 
@@ -162,6 +165,43 @@ impl ERC20Environment for RollupMockup {
 
 	async fn erc20_balance(&self, wallet_address: Address, token_address: Address) -> Uint {
 		self.erc20_wallet.read().await.balance_of(wallet_address, token_address)
+	}
+}
+
+impl ERC721Environment for RollupMockup {
+	async fn erc721_addresses(&self) -> Vec<Address> {
+		self.erc721_wallet.read().await.addresses()
+	}
+
+	async fn erc721_withdraw(
+		&self,
+		wallet_address: Address,
+		token_address: Address,
+		token_id: Uint,
+	) -> Result<(), Box<dyn Error>> {
+		let mut erc721_wallet = self.erc721_wallet.write().await;
+		let payload = erc721_wallet.withdraw(self.app_address, wallet_address, token_address, token_id)?;
+
+		self.send_voucher(token_address, payload).await?;
+
+		Ok(())
+	}
+
+	async fn erc721_transfer(
+		&self,
+		src_wallet: Address,
+		dst_wallet: Address,
+		token_address: Address,
+		token_id: Uint,
+	) -> Result<(), Box<dyn Error>> {
+		let mut erc721_wallet = self.erc721_wallet.write().await;
+		erc721_wallet.transfer(src_wallet, dst_wallet, token_address, token_id)?;
+
+		Ok(())
+	}
+
+	async fn erc721_owner_of(&self, token_address: Address, token_id: Uint) -> Option<Address> {
+		self.erc721_wallet.read().await.owner_of(token_address, token_id)
 	}
 }
 
@@ -391,5 +431,34 @@ where
 
 	pub async fn erc20_balance(&self, wallet_address: Address, token_address: Address) -> Uint {
 		self.env.erc20_balance(wallet_address, token_address).await
+	}
+
+	pub async fn erc721_addresses(&self) -> Vec<Address> {
+		self.env.erc721_addresses().await
+	}
+
+	pub async fn erc721_withdraw(
+		&self,
+		wallet_address: Address,
+		token_address: Address,
+		token_id: Uint,
+	) -> Result<(), Box<dyn Error>> {
+		self.env.erc721_withdraw(wallet_address, token_address, token_id).await
+	}
+
+	pub async fn erc721_transfer(
+		&self,
+		src_wallet: Address,
+		dst_wallet: Address,
+		token_address: Address,
+		token_id: Uint,
+	) -> Result<(), Box<dyn Error>> {
+		self.env
+			.erc721_transfer(src_wallet, dst_wallet, token_address, token_id)
+			.await
+	}
+
+	pub async fn erc721_owner_of(&self, token_address: Address, token_id: Uint) -> Option<Address> {
+		self.env.erc721_owner_of(token_address, token_id).await
 	}
 }
