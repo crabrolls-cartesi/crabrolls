@@ -1,6 +1,6 @@
 use crate::types::address::Address;
 use crate::types::machine::Deposit;
-use crate::utils::abi::encode;
+use crate::utils::abi::abi;
 use ethabi::Uint;
 use std::collections::HashMap;
 use std::error::Error;
@@ -36,19 +36,18 @@ impl EtherWallet {
 	}
 
 	pub fn deposit(&mut self, payload: Vec<u8>) -> Result<(Deposit, Vec<u8>), Box<dyn Error>> {
-		if payload.len() < 20 + 32 {
-			return Err("invalid eth deposit size".into());
-		}
+		let args = abi::ether::deposit(payload.clone())?;
 
-		let sender = payload[0..20].into();
-		let value = Uint::from_big_endian(&payload[20..52]);
+		let sender: Address = abi::extract::address(&args[0])?;
+		let value: Uint = abi::extract::uint(&args[1])?;
+
 		debug!("new ether deposit from {:?} with value {:?}", sender, value);
 
 		let new_balance = self.balance_of(sender) + value;
 		self.set_balance(sender, new_balance);
 
 		let deposit = Deposit::Ether { sender, amount: value };
-		Ok((deposit, payload[52..].to_vec()))
+		Ok((deposit, payload[abi::utils::size_of_packed_tokens(&args)..].to_vec()))
 	}
 
 	pub fn deposit_payload(sender: Address, value: Uint) -> Vec<u8> {
@@ -87,7 +86,7 @@ impl EtherWallet {
 
 		self.set_balance(address, new_balance);
 
-		Ok(encode::ether::withdraw(address, value)?)
+		Ok(abi::ether::withdraw(address, value)?)
 	}
 }
 
@@ -240,8 +239,8 @@ mod tests {
 	#[test]
 	fn test_deposit() {
 		let mut wallet = EtherWallet::new();
-		let address = address!("0x0000000000000000000000000000000000000001");
-		let value = Uint::from(1_000_000_000_000_000_000u64);
+		let address = address!("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
+		let value = Uint::from(100);
 
 		let mut value_bytes = vec![0u8; 32];
 		value.to_big_endian(&mut value_bytes);
@@ -249,14 +248,16 @@ mod tests {
 		let mut payload = vec![0u8; 52];
 		payload[0..20].copy_from_slice(address.as_ref());
 		payload[20..52].copy_from_slice(&value_bytes);
+		payload.extend_from_slice(&[16u8; 16]);
 
-		let result = wallet.deposit(payload);
+		let result = wallet.deposit(payload.into());
 
 		assert!(result.is_ok());
 
 		let (deposit, remaining_payload) = result.expect("deposit failed");
 
 		if let Deposit::Ether { sender, amount } = deposit {
+			dbg!(sender.to_string());
 			assert_eq!(sender, address);
 			assert_eq!(amount, value);
 		} else {
@@ -265,6 +266,6 @@ mod tests {
 
 		assert_eq!(wallet.balance_of(address), value);
 
-		assert!(remaining_payload.is_empty());
+		assert_eq!(remaining_payload, vec![16u8; 16]);
 	}
 }

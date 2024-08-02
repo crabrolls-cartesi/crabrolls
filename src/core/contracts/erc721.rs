@@ -1,6 +1,6 @@
 use crate::types::address::Address;
 use crate::types::machine::Deposit;
-use crate::utils::abi::encode;
+use crate::utils::abi::abi;
 use ethabi::Uint;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
@@ -70,13 +70,17 @@ impl ERC721Wallet {
 	}
 
 	pub fn deposit(&mut self, payload: Vec<u8>) -> Result<(Deposit, Vec<u8>), Box<dyn Error>> {
-		if payload.len() < 20 + 20 + 32 {
-			return Err("invalid erc721 deposit size".into());
-		}
+		let args = abi::erc721::deposit(payload.clone())?;
 
-		let wallet_address = Address::from(&payload[0..20]);
-		let token_address = Address::from(&payload[20..40]);
-		let token_id = Uint::from_big_endian(payload[40..72].try_into().unwrap());
+		let token_address = abi::extract::address(&args[0])?;
+		let wallet_address = abi::extract::address(&args[1])?;
+		let token_id = abi::extract::uint(&args[2])?;
+
+		debug!(
+			"new erc721 deposit from {:?} with token {:?} and id {:?}",
+			wallet_address, token_address, token_id
+		);
+
 		self.add_token(wallet_address, token_address, token_id);
 
 		let deposit = Deposit::ERC721 {
@@ -85,7 +89,7 @@ impl ERC721Wallet {
 			id: token_id,
 		};
 
-		Ok((deposit, payload[72..].to_vec()))
+		Ok((deposit, payload[abi::utils::size_of_packed_tokens(&args)..].to_vec()))
 	}
 
 	pub fn deposit_payload(wallet_address: Address, token_address: Address, token_id: Uint) -> Vec<u8> {
@@ -114,7 +118,7 @@ impl ERC721Wallet {
 
 		self.remove_token(wallet_address, token_address, token_id);
 
-		Ok(encode::erc721::withdraw(dapp_address, wallet_address, token_id)?)
+		Ok(abi::erc721::withdraw(dapp_address, wallet_address, token_id)?)
 	}
 }
 

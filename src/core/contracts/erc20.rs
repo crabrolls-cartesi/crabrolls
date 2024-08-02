@@ -1,6 +1,6 @@
 use crate::types::address::Address;
 use crate::types::machine::Deposit;
-use crate::utils::abi::encode;
+use crate::utils::abi::abi;
 use ethabi::Uint;
 use std::collections::HashMap;
 use std::error::Error;
@@ -64,13 +64,13 @@ impl ERC20Wallet {
 	}
 
 	pub fn deposit(&mut self, payload: Vec<u8>) -> Result<(Deposit, Vec<u8>), Box<dyn Error>> {
-		if payload.len() < 20 + 20 + 32 {
-			return Err("invalid erc20 deposit size".into());
-		}
+		let args = abi::erc20::deposit(payload.clone())?;
 
-		let wallet_address = payload[0..20].into();
-		let token_address = payload[20..40].into();
-		let value = Uint::from_big_endian(&payload[40..72]);
+		let token_address = abi::extract::address(&args[0])?;
+		let wallet_address = abi::extract::address(&args[1])?;
+		let value = abi::extract::uint(&args[2])?;
+
+		debug!("new ERC20 deposit from {:?} with value {:?}", wallet_address, value);
 
 		let new_balance = self.balance_of(wallet_address, token_address) + value;
 		self.set_balance(wallet_address, token_address, new_balance);
@@ -81,7 +81,7 @@ impl ERC20Wallet {
 			amount: value,
 		};
 
-		Ok((deposit, payload[72..].to_vec()))
+		Ok((deposit, payload[abi::utils::size_of_packed_tokens(&args)..].to_vec()))
 	}
 
 	pub fn deposit_payload(wallet_address: Address, token_address: Address, value: Uint) -> Vec<u8> {
@@ -109,7 +109,7 @@ impl ERC20Wallet {
 
 		self.set_balance(wallet_address, token_address, new_balance);
 
-		Ok(encode::erc20::withdraw(wallet_address, value)?)
+		Ok(abi::erc20::withdraw(wallet_address, value)?)
 	}
 }
 

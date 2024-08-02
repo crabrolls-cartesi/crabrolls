@@ -1,4 +1,4 @@
-use ethabi::Address as EthAddress;
+use ethabi::{Address as EthAddress, Token};
 use serde::{Deserialize, Serialize};
 
 #[macro_export]
@@ -15,6 +15,12 @@ pub struct H160(pub [u8; 20]);
 impl H160 {
 	pub fn new(inner: [u8; 20]) -> Self {
 		H160(inner)
+	}
+
+	pub fn from_slice(inner: &[u8]) -> Self {
+		let mut inner_arr = [0u8; 20];
+		inner_arr.copy_from_slice(inner);
+		H160(inner_arr)
 	}
 
 	pub fn zero() -> Self {
@@ -78,6 +84,15 @@ impl From<EthAddress> for H160 {
 	}
 }
 
+impl From<Token> for H160 {
+	fn from(token: Token) -> Self {
+		match token {
+			Token::Address(address) => H160::from_slice(&address.0),
+			_ => panic!("Invalid token type"),
+		}
+	}
+}
+
 impl From<H160> for EthAddress {
 	fn from(address: H160) -> Self {
 		EthAddress::from_slice(&address.0)
@@ -133,6 +148,18 @@ impl TryFrom<Vec<u8>> for H160 {
 			inner.copy_from_slice(&bytes);
 			Ok(H160(inner))
 		}
+	}
+}
+
+impl PartialEq<EthAddress> for H160 {
+	fn eq(&self, other: &EthAddress) -> bool {
+		self.0 == other.as_bytes()
+	}
+}
+
+impl PartialEq<H160> for EthAddress {
+	fn eq(&self, other: &H160) -> bool {
+		self.as_bytes() == other.0
 	}
 }
 
