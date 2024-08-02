@@ -1,4 +1,5 @@
-use crate::{address, types::address::Address};
+use crate::address;
+use ethabi::Address;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct AddressBook {

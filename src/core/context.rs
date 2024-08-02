@@ -153,7 +153,7 @@ impl Supervisor {
 
 		if advance_input.metadata.sender == rollup.get_address_book().app_address_relay {
 			debug!("Advance input from AppAddressRelay({})", advance_input.metadata.sender);
-			let new_app_address: Address = advance_input.payload.clone().try_into()?;
+			let new_app_address: Address = Address::from_slice(&advance_input.payload);
 			rollup.set_app_address(new_app_address).await;
 			return Ok(FinishStatus::Accept);
 		}

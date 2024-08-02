@@ -1,5 +1,4 @@
-use ethabi::{Address as EthAddress, Token};
-use serde::{Deserialize, Serialize};
+use ethabi::Address;
 
 #[macro_export]
 macro_rules! address {
@@ -8,159 +7,20 @@ macro_rules! address {
 	};
 }
 
-#[repr(C)]
-#[derive(Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Default, Debug, Hash)]
-pub struct H160(pub [u8; 20]);
+#[cfg(test)]
+mod tests {
+	use super::*;
 
-impl H160 {
-	pub fn new(inner: [u8; 20]) -> Self {
-		H160(inner)
-	}
+	#[test]
+	fn test_address_macro() {
+		let address = address!("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
 
-	pub fn from_slice(inner: &[u8]) -> Self {
-		let mut inner_arr = [0u8; 20];
-		inner_arr.copy_from_slice(inner);
-		H160(inner_arr)
-	}
-
-	pub fn zero() -> Self {
-		H160([0u8; 20])
-	}
-
-	pub fn is_zero(&self) -> bool {
-		self.0.iter().all(|&x| x == 0)
-	}
-
-	pub fn as_bytes(&self) -> &[u8; 20] {
-		&self.0
+		assert_eq!(
+			address,
+			Address::from([
+				0xf3, 0x9f, 0xd6, 0xe5, 0x1a, 0xad, 0x88, 0xf6, 0xf4, 0xce, 0x6a, 0xb8, 0x82, 0x72, 0x79, 0xcf, 0xff,
+				0xb9, 0x22, 0x66
+			])
+		);
 	}
 }
-
-impl std::fmt::Display for H160 {
-	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-		write!(f, "0x{}", hex::encode(&self.0))
-	}
-}
-
-impl Serialize for H160 {
-	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-	where
-		S: serde::ser::Serializer,
-	{
-		serializer.serialize_str(&format!("0x{}", hex::encode(&self.0)))
-	}
-}
-
-impl<'de> Deserialize<'de> for H160 {
-	fn deserialize<D>(deserializer: D) -> Result<H160, D::Error>
-	where
-		D: serde::de::Deserializer<'de>,
-	{
-		let s = String::deserialize(deserializer)?;
-		let bytes = hex::decode(&s[2..]).map_err(serde::de::Error::custom)?;
-		let mut inner = [0u8; 20];
-		inner.copy_from_slice(&bytes);
-		Ok(H160(inner))
-	}
-}
-
-impl std::str::FromStr for H160 {
-	type Err = hex::FromHexError;
-
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let s = s.trim_start_matches("0x");
-		let bytes = hex::decode(s)?;
-		let mut inner = [0u8; 20];
-		inner.copy_from_slice(&bytes);
-		Ok(H160(inner))
-	}
-}
-
-impl From<EthAddress> for H160 {
-	fn from(address: EthAddress) -> Self {
-		let mut inner = [0u8; 20];
-		inner.copy_from_slice(&address.as_bytes());
-		H160(inner)
-	}
-}
-
-impl From<Token> for H160 {
-	fn from(token: Token) -> Self {
-		match token {
-			Token::Address(address) => H160::from_slice(&address.0),
-			_ => panic!("Invalid token type"),
-		}
-	}
-}
-
-impl From<H160> for EthAddress {
-	fn from(address: H160) -> Self {
-		EthAddress::from_slice(&address.0)
-	}
-}
-
-impl From<H160> for [u8; 20] {
-	fn from(address: H160) -> Self {
-		address.0
-	}
-}
-
-impl AsRef<[u8; 20]> for H160 {
-	fn as_ref(&self) -> &[u8; 20] {
-		&self.0
-	}
-}
-
-impl From<H160> for Vec<u8> {
-	fn from(address: H160) -> Self {
-		address.0.to_vec()
-	}
-}
-
-impl From<H160> for String {
-	fn from(address: H160) -> Self {
-		address.to_string()
-	}
-}
-
-impl From<&[u8]> for H160 {
-	fn from(bytes: &[u8]) -> Self {
-		let mut inner = [0u8; 20];
-		inner.copy_from_slice(bytes);
-		H160(inner)
-	}
-}
-
-impl From<&str> for H160 {
-	fn from(s: &str) -> Self {
-		s.parse().expect("Invalid address format")
-	}
-}
-
-impl TryFrom<Vec<u8>> for H160 {
-	type Error = &'static str;
-
-	fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
-		if bytes.len() != 20 {
-			Err("Invalid address length")
-		} else {
-			let mut inner = [0u8; 20];
-			inner.copy_from_slice(&bytes);
-			Ok(H160(inner))
-		}
-	}
-}
-
-impl PartialEq<EthAddress> for H160 {
-	fn eq(&self, other: &EthAddress) -> bool {
-		self.0 == other.as_bytes()
-	}
-}
-
-impl PartialEq<H160> for EthAddress {
-	fn eq(&self, other: &H160) -> bool {
-		self.as_bytes() == other.0
-	}
-}
-
-pub type Address = H160;

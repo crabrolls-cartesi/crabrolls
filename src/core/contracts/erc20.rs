@@ -1,7 +1,6 @@
-use crate::types::address::Address;
 use crate::types::machine::Deposit;
 use crate::utils::abi::abi;
-use ethabi::Uint;
+use ethabi::{Address, Uint};
 use std::collections::HashMap;
 use std::error::Error;
 use std::future::Future;
@@ -209,8 +208,8 @@ mod tests {
 
 		let mut payload = vec![0u8; 72];
 
-		payload[0..20].copy_from_slice(wallet_address.as_bytes());
-		payload[20..40].copy_from_slice(token_address.as_bytes());
+		payload[0..20].copy_from_slice(token_address.as_bytes());
+		payload[20..40].copy_from_slice(wallet_address.as_bytes());
 		payload[40..72].copy_from_slice(&value_bytes);
 
 		let result = wallet.deposit(payload.to_vec());

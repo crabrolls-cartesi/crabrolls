@@ -1,11 +1,10 @@
 use async_std::sync::{Mutex, RwLock};
-use ethabi::Uint;
+use ethabi::{Address, Uint};
 use std::{error::Error, sync::Arc, time::UNIX_EPOCH};
 
 use crate::{
 	address,
 	types::{
-		address::Address,
 		machine::{Deposit, FinishStatus, Output, PortalHandlerConfig},
 		testing::{AdvanceResult, InspectResult},
 	},

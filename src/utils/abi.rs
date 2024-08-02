@@ -1,6 +1,5 @@
 pub mod abi {
-	use crate::types::address::Address;
-	use ethabi::{ParamType, Token, Uint};
+	use ethabi::{Address, ParamType, Token, Uint};
 	use std::error::Error;
 
 	pub mod extract {
@@ -9,15 +8,11 @@ pub mod abi {
 		pub fn address(arg: &ethabi::Token) -> Result<Address, Box<dyn Error>> {
 			arg.clone()
 				.into_address()
-				.map(Into::into)
 				.ok_or_else(|| "invalid type for address".into())
 		}
 
 		pub fn uint(arg: &ethabi::Token) -> Result<Uint, Box<dyn Error>> {
-			arg.clone()
-				.into_uint()
-				.map(Into::into)
-				.ok_or_else(|| "invalid type for Uint".into())
+			arg.clone().into_uint().ok_or_else(|| "invalid type for Uint".into())
 		}
 
 		pub fn array_of_uint(arg: &ethabi::Token) -> Result<Vec<Uint>, Box<dyn Error>> {
@@ -98,7 +93,7 @@ pub mod abi {
 							return Err("Insufficient payload length for Address".into());
 						}
 						let address = Address::from_slice(&payload[..20]);
-						tokens.push(Token::Address(address.into()));
+						tokens.push(Token::Address(address));
 						payload = &payload[20..];
 					}
 					ParamType::Uint(size) => {
@@ -229,7 +224,7 @@ pub mod abi {
 				}
 			]"#;
 
-			let params = vec![Token::Address(address.into()), Token::Uint(value)];
+			let params = vec![Token::Address(address), Token::Uint(value)];
 
 			encode::function_call(abi_json, "withdrawEther", params)
 		}
@@ -266,7 +261,7 @@ pub mod abi {
 				}
 			]"#;
 
-			let params = vec![Token::Address(address.into()), Token::Uint(value)];
+			let params = vec![Token::Address(address), Token::Uint(value)];
 
 			encode::function_call(abi_json, "transfer", params)
 		}
@@ -309,8 +304,8 @@ pub mod abi {
 			]"#;
 
 			let params = vec![
-				Token::Address(dapp_address.into()),
-				Token::Address(address.into()),
+				Token::Address(dapp_address),
+				Token::Address(address),
 				Token::Uint(token_id),
 			];
 
@@ -391,8 +386,8 @@ pub mod abi {
 			]"#;
 
 			let params = vec![
-				Token::Address(dapp_address.into()),
-				Token::Address(address.into()),
+				Token::Address(dapp_address),
+				Token::Address(address),
 				Token::Uint(token_id),
 				Token::Uint(amount),
 				Token::Bytes(data),
@@ -444,8 +439,8 @@ pub mod abi {
 			]"#;
 
 			let params = vec![
-				Token::Address(dapp_address.into()),
-				Token::Address(address.into()),
+				Token::Address(dapp_address),
+				Token::Address(address),
 				Token::Array(
 					withdrawals
 						.iter()
@@ -469,8 +464,8 @@ pub mod abi {
 #[cfg(test)]
 mod tests {
 	use super::abi;
-	use crate::{address, types::address::Address};
-	use ethabi::{Token, Uint};
+	use crate::address;
+	use ethabi::{Address, Token, Uint};
 
 	#[test]
 	fn test_ether_withdraw() {
@@ -571,7 +566,7 @@ mod tests {
 		let function_name = "transfer";
 		let address = address!("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
 		let value = Uint::from(1000);
-		let params = vec![Token::Address(address.into()), Token::Uint(value)];
+		let params = vec![Token::Address(address), Token::Uint(value)];
 
 		let encoded = abi::encode::function_call(abi_json, function_name, params).expect("encoding failed");
 		let expected = hex::decode("a9059cbb000000000000000000000000f39fd6e51aad88f6f4ce6ab8827279cfffb9226600000000000000000000000000000000000000000000000000000000000003e8").expect("decoding failed");

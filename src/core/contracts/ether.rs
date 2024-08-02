@@ -1,7 +1,6 @@
-use crate::types::address::Address;
 use crate::types::machine::Deposit;
 use crate::utils::abi::abi;
-use ethabi::Uint;
+use ethabi::{Address, Uint};
 use std::collections::HashMap;
 use std::error::Error;
 use std::future::Future;
@@ -106,7 +105,6 @@ pub trait EtherEnvironment {
 mod tests {
 	use super::*;
 	use crate::address;
-	use crate::types::address::Address;
 
 	#[test]
 	fn test_ether_deposit_creation() {

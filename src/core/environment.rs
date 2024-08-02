@@ -3,13 +3,12 @@ use super::contracts::erc721::{ERC721Environment, ERC721Wallet};
 use super::contracts::ether::{EtherEnvironment, EtherWallet};
 use crate::types::machine::{Advance, FinishStatus, Input, Inspect, Output};
 use crate::utils::address_book::AddressBook;
-use crate::{types::address::Address, utils::requests::ClientWrapper};
+use crate::utils::requests::ClientWrapper;
 use async_std::sync::RwLock;
-use ethabi::Uint;
+use ethabi::{Address, Uint};
 use serde_json::Value;
 use std::error::Error;
 use std::future::Future;
-use std::ops::Add;
 use std::sync::Arc;
 
 pub trait Environment: EtherEnvironment + ERC20Environment + ERC721Environment {

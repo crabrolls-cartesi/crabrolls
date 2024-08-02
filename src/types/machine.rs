@@ -1,9 +1,8 @@
 use crate::{
 	core::contracts::{erc20::ERC20Wallet, ether::EtherWallet},
-	types::address::Address,
 	utils::parsers::deserializers::*,
 };
-use ethabi::Uint;
+use ethabi::{Address, Uint};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug, Clone)]

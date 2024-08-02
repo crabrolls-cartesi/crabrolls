@@ -17,10 +17,9 @@ pub mod prelude {
 		testing::{MockupOptions, Tester},
 	};
 
-	pub use crate::types::{
-		address::Address,
-		machine::{Deposit, FinishStatus, Metadata, Output, PortalHandlerConfig},
-	};
+	pub use crate::types::machine::{Deposit, FinishStatus, Metadata, Output, PortalHandlerConfig};
 
 	pub use crate::utils::{address_book::AddressBook, units};
+
+	pub use ethabi::Address;
 }

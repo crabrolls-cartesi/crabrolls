@@ -1,7 +1,6 @@
-use crate::types::address::Address;
 use crate::types::machine::Deposit;
 use crate::utils::abi::abi;
-use ethabi::Uint;
+use ethabi::{Address, Uint};
 use std::collections::HashMap;
 use std::error::Error;
 use std::future::Future;
