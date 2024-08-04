@@ -1,5 +1,5 @@
 use crabrolls::prelude::*;
-use ethabi::Uint;
+use ethabi::{Address, Uint};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 

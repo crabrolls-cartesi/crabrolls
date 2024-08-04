@@ -2,10 +2,11 @@ use super::environment::Rollup;
 use super::{application::Application, environment::RollupInternalEnvironment};
 use crate::types::machine::{Advance, Inspect};
 use crate::{
-	prelude::{Address, Deposit},
+	prelude::Deposit,
 	types::machine::{FinishStatus, Input, PortalHandlerConfig},
 	utils::address_book::AddressBook,
 };
+use ethabi::Address;
 use std::error::Error;
 
 #[derive(Debug, Clone)]
