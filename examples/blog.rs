@@ -151,6 +151,8 @@ async fn main() {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use ethabi::Address;
+	use serde_json::json;
 
 	async fn extract_posts(output: &Output) -> Vec<Post> {
 		match output {
@@ -175,13 +177,16 @@ mod tests {
 		let app = JsonApp::new();
 		let tester = Tester::new(app, MockupOptions::default());
 
-		let add_payload = serde_json::to_vec(&Input::AddPost {
-			title: "First Post".into(),
-			content: "This is the first post.".into(),
+		let add_payload = json!({
+			"kind": "AddPost",
+			"payload": {
+				"title": "First Post",
+				"content": "This is the first post."
+			}
 		})
-		.expect("Failed to serialize AddPost input");
+		.to_string();
 
-		let result = tester.advance(Address::default(), add_payload.clone()).await;
+		let result = tester.advance(Address::default(), add_payload.into_bytes()).await;
 
 		assert!(result.is_accepted(), "Expected Accept status");
 		assert!(result.get_error().is_none(), "Expected no error");
@@ -210,22 +215,28 @@ mod tests {
 		let app = JsonApp::new();
 		let tester = Tester::new(app, MockupOptions::default());
 
-		let add_payload = serde_json::to_vec(&Input::AddPost {
-			title: "First Post".into(),
-			content: "This is the first post.".into(),
+		let add_payload = json!({
+			"kind": "AddPost",
+			"payload": {
+				"title": "First Post",
+				"content": "This is the first post."
+			}
 		})
-		.expect("Failed to serialize AddPost input");
+		.to_string();
 
-		tester.advance(Address::default(), add_payload.clone()).await;
+		tester.advance(Address::default(), add_payload.into_bytes()).await;
 
-		let update_payload = serde_json::to_vec(&Input::UpdatePost {
-			id: 1,
-			title: Some("Updated First Post".into()),
-			content: None,
+		let update_payload = json!({
+			"kind": "UpdatePost",
+			"payload": {
+				"id": 1,
+				"title": "Updated First Post",
+				"content": null
+			}
 		})
-		.expect("Failed to serialize UpdatePost input");
+		.to_string();
 
-		let result = tester.advance(Address::default(), update_payload.clone()).await;
+		let result = tester.advance(Address::default(), update_payload.into_bytes()).await;
 
 		assert!(result.is_accepted(), "Expected Accept status");
 		assert!(result.get_error().is_none(), "Expected no error");
@@ -254,18 +265,26 @@ mod tests {
 		let app = JsonApp::new();
 		let tester = Tester::new(app, MockupOptions::default());
 
-		let add_payload = serde_json::to_vec(&Input::AddPost {
-			title: "First Post".into(),
-			content: "This is the first post.".into(),
+		let add_payload = json!({
+			"kind": "AddPost",
+			"payload": {
+				"title": "First Post",
+				"content": "This is the first post."
+			}
 		})
-		.expect("Failed to serialize AddPost input");
+		.to_string();
 
-		tester.advance(Address::default(), add_payload.clone()).await;
+		tester.advance(Address::default(), add_payload.into_bytes()).await;
 
-		let delete_payload =
-			serde_json::to_vec(&Input::DeletePost { id: 1 }).expect("Failed to serialize DeletePost input");
+		let delete_payload = json!({
+			"kind": "DeletePost",
+			"payload": {
+				"id": 1
+			}
+		})
+		.to_string();
 
-		let result = tester.advance(Address::default(), delete_payload.clone()).await;
+		let result = tester.advance(Address::default(), delete_payload.into_bytes()).await;
 
 		assert!(result.is_accepted(), "Expected Accept status");
 		assert!(result.get_error().is_none(), "Expected no error");
@@ -288,14 +307,17 @@ mod tests {
 		let app = JsonApp::new();
 		let tester = Tester::new(app, MockupOptions::default());
 
-		let update_payload = serde_json::to_vec(&Input::UpdatePost {
-			id: 1,
-			title: Some("Updated First Post".into()),
-			content: None,
+		let update_payload = json!({
+			"kind": "UpdatePost",
+			"payload": {
+				"id": 1,
+				"title": "Updated First Post",
+				"content": null
+			}
 		})
-		.expect("Failed to serialize UpdatePost input");
+		.to_string();
 
-		let result = tester.advance(Address::default(), update_payload.clone()).await;
+		let result = tester.advance(Address::default(), update_payload.into_bytes()).await;
 
 		assert!(result.is_rejected(), "Expected Reject status");
 		assert!(result.get_error().is_some(), "Expected an error");
