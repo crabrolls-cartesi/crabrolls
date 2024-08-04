@@ -59,11 +59,6 @@ impl Application for SuperHoneypotApp {
 
 				let balance = env.ether_balance(sender).await;
 				println!("Current balance of sender: {} ether", units::wei::to_ether(balance));
-
-				if balance == Uint::zero() {
-					println!("Withdrawing all ether from account with zero balance.");
-					env.ether_withdraw(sender, amount).await?;
-				}
 			}
 			Some(Deposit::ERC20 { sender, token, amount }) => {
 				println!("Received deposit of {} ERC20 tokens from {}", amount, sender);
@@ -90,7 +85,7 @@ impl Application for SuperHoneypotApp {
 				}
 			}
 			None => {
-				println!("Received no deposit, triggering withdrawal if balance is zero.");
+				println!("Received no deposit, triggering withdrawal request");
 
 				let withdraw = match serde_json::from_slice::<AdvanceWithdraw>(payload) {
 					Ok(withdraw) => withdraw,
