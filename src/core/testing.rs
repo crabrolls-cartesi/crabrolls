@@ -15,11 +15,12 @@ use crate::{
 use super::{
 	context::handle_portals,
 	contracts::{
+		erc1155::{ERC1155Environment, ERC1155Wallet, IntoIdsAmountsIter},
 		erc20::{ERC20Environment, ERC20Wallet},
 		erc721::{ERC721Environment, ERC721Wallet},
 		ether::{EtherEnvironment, EtherWallet},
 	},
-	environment::RollupExtraEnvironment,
+	environment::RollupInternalEnvironment,
 };
 
 pub struct RollupMockup {
@@ -31,6 +32,7 @@ pub struct RollupMockup {
 	ether_wallet: Arc<RwLock<EtherWallet>>,
 	erc20_wallet: Arc<RwLock<ERC20Wallet>>,
 	erc721_wallet: Arc<RwLock<ERC721Wallet>>,
+	erc1155_wallet: Arc<RwLock<ERC1155Wallet>>,
 }
 
 impl RollupMockup {
@@ -43,6 +45,7 @@ impl RollupMockup {
 			ether_wallet: Arc::new(RwLock::new(EtherWallet::new())),
 			erc20_wallet: Arc::new(RwLock::new(ERC20Wallet::new())),
 			erc721_wallet: Arc::new(RwLock::new(ERC721Wallet::new())),
+			erc1155_wallet: Arc::new(RwLock::new(ERC1155Wallet::new())),
 		}
 	}
 
@@ -204,6 +207,53 @@ impl ERC721Environment for RollupMockup {
 	}
 }
 
+impl ERC1155Environment for RollupMockup {
+	async fn erc1155_addresses(&self) -> Vec<Address> {
+		self.erc1155_wallet.read().await.addresses()
+	}
+
+	async fn erc1155_withdraw<I>(
+		&self,
+		wallet_address: Address,
+		token_address: Address,
+		withdrawals: I,
+		data: Option<Vec<u8>>,
+	) -> Result<(), Box<dyn Error>>
+	where
+		I: IntoIdsAmountsIter,
+	{
+		let mut erc1155_wallet = self.erc1155_wallet.write().await;
+		let payload = erc1155_wallet.withdraw(self.app_address, wallet_address, token_address, withdrawals, data)?;
+
+		self.send_voucher(token_address, payload).await?;
+
+		Ok(())
+	}
+
+	async fn erc1155_transfer<I>(
+		&self,
+		src_wallet: Address,
+		dst_wallet: Address,
+		token_address: Address,
+		transfers: I,
+	) -> Result<(), Box<dyn Error>>
+	where
+		I: IntoIdsAmountsIter,
+	{
+		let mut erc1155_wallet = self.erc1155_wallet.write().await;
+		erc1155_wallet.transfer(src_wallet, dst_wallet, token_address, transfers)?;
+
+		Ok(())
+	}
+
+	async fn erc1155_balance(&self, wallet_address: Address, token_address: Address, token_id: Uint) -> Uint {
+		self.erc1155_wallet
+			.read()
+			.await
+			.balance_of(wallet_address, token_address, token_id)
+	}
+}
+
 pub struct MockupOptions {
 	pub portal_config: PortalHandlerConfig,
 }
@@ -247,13 +297,25 @@ impl MockupOptionsBuilder {
 	}
 }
 
-impl RollupExtraEnvironment for RollupMockup {
+impl RollupInternalEnvironment for RollupMockup {
 	fn get_address_book(&self) -> AddressBook {
 		self.address_book.clone()
 	}
 
 	fn get_ether_wallet(&self) -> Arc<RwLock<EtherWallet>> {
 		self.ether_wallet.clone()
+	}
+
+	fn get_erc20_wallet(&self) -> Arc<RwLock<ERC20Wallet>> {
+		self.erc20_wallet.clone()
+	}
+
+	fn get_erc721_wallet(&self) -> Arc<RwLock<ERC721Wallet>> {
+		self.erc721_wallet.clone()
+	}
+
+	fn get_erc1155_wallet(&self) -> Arc<RwLock<ERC1155Wallet>> {
+		self.erc1155_wallet.clone()
 	}
 }
 
@@ -276,12 +338,21 @@ where
 	}
 
 	pub async fn deposit(&self, deposit: Deposit) -> AdvanceResult {
-		let sender = match deposit {
+		let sender = match deposit.clone() {
 			Deposit::Ether { .. } => self.env.address_book.ether_portal,
 			Deposit::ERC20 { .. } => self.env.address_book.erc20_portal,
 			Deposit::ERC721 { .. } => self.env.address_book.erc721_portal,
-			Deposit::ERC1155Single { .. } => self.env.address_book.erc1155_single_portal,
-			Deposit::ERC1155Batch { .. } => self.env.address_book.erc1155_batch_portal,
+			Deposit::ERC1155 {
+				ids_amounts,
+				sender: _,
+				token: _,
+			} => {
+				if ids_amounts.len() == 1 {
+					self.env.address_book.erc1155_single_portal
+				} else {
+					self.env.address_book.erc1155_batch_portal
+				}
+			}
 		};
 
 		let metadata = Metadata {
@@ -294,7 +365,7 @@ where
 		let (status, error) = match self.mockup_options.portal_config {
 			PortalHandlerConfig::Dispense => (FinishStatus::Accept, None),
 			PortalHandlerConfig::Ignore => {
-				let payload: Vec<u8> = deposit.into();
+				let payload: Vec<u8> = deposit.try_into().expect("Failed to convert deposit to payload");
 				match self
 					.app
 					.advance(&self.env, metadata.clone(), payload.as_slice(), None)
@@ -305,10 +376,14 @@ where
 				}
 			}
 			PortalHandlerConfig::Handle { advance } => {
-				let deposit_payload = handle_portals(&self.env, sender, deposit.into())
-					.await
-					.expect("Failed to handle deposit payload")
-					.expect("No deposit returned");
+				let deposit_payload = handle_portals(
+					&self.env,
+					sender,
+					deposit.try_into().expect("Failed to convert deposit to payload"),
+				)
+				.await
+				.expect("Failed to handle deposit payload")
+				.expect("No deposit returned");
 
 				if advance {
 					match self
@@ -459,5 +534,43 @@ where
 
 	pub async fn erc721_owner_of(&self, token_address: Address, token_id: Uint) -> Option<Address> {
 		self.env.erc721_owner_of(token_address, token_id).await
+	}
+
+	pub async fn erc1155_addresses(&self) -> Vec<Address> {
+		self.env.erc1155_addresses().await
+	}
+
+	pub async fn erc1155_withdraw<I>(
+		&self,
+		wallet_address: Address,
+		token_address: Address,
+		withdrawals: I,
+		data: Option<Vec<u8>>,
+	) -> Result<(), Box<dyn Error>>
+	where
+		I: IntoIdsAmountsIter,
+	{
+		self.env
+			.erc1155_withdraw(wallet_address, token_address, withdrawals, data)
+			.await
+	}
+
+	pub async fn erc1155_transfer<I>(
+		&self,
+		src_wallet: Address,
+		dst_wallet: Address,
+		token_address: Address,
+		transfers: I,
+	) -> Result<(), Box<dyn Error>>
+	where
+		I: IntoIdsAmountsIter,
+	{
+		self.env
+			.erc1155_transfer(src_wallet, dst_wallet, token_address, transfers)
+			.await
+	}
+
+	pub async fn erc1155_balance(&self, wallet_address: Address, token_address: Address, token_id: Uint) -> Uint {
+		self.env.erc1155_balance(wallet_address, token_address, token_id).await
 	}
 }

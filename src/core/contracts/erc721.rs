@@ -91,16 +91,12 @@ impl ERC721Wallet {
 		Ok((deposit, payload[abi::utils::size_of_packed_tokens(&args)..].to_vec()))
 	}
 
-	pub fn deposit_payload(wallet_address: Address, token_address: Address, token_id: Uint) -> Vec<u8> {
-		let mut token_id_bytes = vec![0u8; 32];
-		token_id.to_big_endian(&mut token_id_bytes);
-
-		let mut payload = vec![0u8; 48];
-		payload[0..20].copy_from_slice(wallet_address.as_ref());
-		payload[20..40].copy_from_slice(token_address.as_ref());
-		payload[40..72].copy_from_slice(&token_id_bytes);
-
-		payload
+	pub fn deposit_payload(
+		wallet_address: Address,
+		token_address: Address,
+		token_id: Uint,
+	) -> Result<Vec<u8>, Box<dyn Error>> {
+		abi::erc721::deposit_payload(wallet_address, token_address, token_id)
 	}
 
 	pub fn withdraw(
@@ -115,9 +111,15 @@ impl ERC721Wallet {
 			return Err("wallet does not own the token".into());
 		}
 
-		self.remove_token(wallet_address, token_address, token_id);
+		let result = abi::erc721::withdraw(dapp_address, wallet_address, token_id);
 
-		Ok(abi::erc721::withdraw(dapp_address, wallet_address, token_id)?)
+		match result {
+			Ok(payload) => {
+				self.remove_token(wallet_address, token_address, token_id);
+				Ok(payload)
+			}
+			Err(e) => Err(e),
+		}
 	}
 }
 

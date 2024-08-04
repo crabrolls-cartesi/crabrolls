@@ -61,19 +61,19 @@ mod tests {
 		let payload = b"Hi Crabrolls!".to_vec();
 		let result = tester.advance(address, payload.clone()).await;
 
-		assert_eq!(result.status, FinishStatus::Accept, "Expected Accept status");
+		assert!(result.is_accepted(), "Expected Accept status");
 
-		assert!(result.error.is_none(), "Expected no error");
+		assert!(!result.is_errored(), "Expected no error");
 
 		assert_eq!(
-			result.outputs.len(),
+			result.get_outputs().len(),
 			3,
 			"Expected 3 outputs, got {}",
-			result.outputs.len()
+			result.get_outputs().len()
 		);
 
 		assert_eq!(
-			result.outputs,
+			result.get_outputs(),
 			vec![
 				Output::Notice {
 					payload: payload.clone()
@@ -89,6 +89,10 @@ mod tests {
 			"Expected outputs to match"
 		);
 
-		assert_eq!(result.metadata.sender, Address::default(), "Unexpected sender address");
+		assert_eq!(
+			result.get_metadata().sender,
+			Address::default(),
+			"Unexpected sender address"
+		);
 	}
 }

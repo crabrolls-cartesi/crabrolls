@@ -54,142 +54,190 @@ pub mod abi {
 	}
 
 	pub mod encode {
-		use super::*;
-		use ethabi::Function;
+		use ethabi::{encode, Function, Token};
+		use serde_json::from_str;
+		use std::error::Error;
 
 		pub fn function_call(
 			abi_json: &str,
 			function_name: &str,
 			params: Vec<Token>,
 		) -> Result<Vec<u8>, Box<dyn Error>> {
-			let parsed_json = serde_json::from_str::<Vec<Function>>(abi_json)?;
-
+			let parsed_json: Vec<Function> = from_str(abi_json)?;
 			let func = parsed_json
 				.iter()
 				.find(|&f| f.name == function_name)
 				.ok_or("Function not found in ABI")?;
-
 			Ok(func.encode_input(&params)?)
+		}
+
+		pub fn abi(tokens: &[Token]) -> Result<Vec<u8>, Box<dyn Error>> {
+			Ok(encode(tokens))
+		}
+
+		pub fn pack(tokens: &[Token]) -> Result<Vec<u8>, Box<dyn Error>> {
+			let mut payload = Vec::new();
+
+			for token in tokens {
+				match token {
+					Token::Address(address) => payload.extend_from_slice(&address.as_bytes()[..]),
+					Token::Uint(value) | Token::Int(value) => {
+						let mut buf = [0u8; 32];
+						value.to_big_endian(&mut buf);
+						payload.extend_from_slice(&buf);
+					}
+					Token::FixedBytes(bytes) => payload.extend_from_slice(bytes),
+					Token::Bool(value) => payload.push(if *value { 1 } else { 0 }),
+					Token::String(string) => {
+						let string_bytes = string.as_bytes();
+						let size = string_bytes.len();
+						let size_token = Token::Uint(size.into());
+						let mut size_buf = encode(&[size_token]);
+						size_buf.truncate(32);
+						payload.extend_from_slice(&size_buf);
+						payload.extend_from_slice(string_bytes);
+					}
+					Token::Bytes(bytes) => {
+						let size = bytes.len();
+						let size_token = Token::Uint(size.into());
+						let mut size_buf = encode(&[size_token]);
+						size_buf.truncate(32);
+						payload.extend_from_slice(&size_buf);
+						payload.extend_from_slice(bytes);
+					}
+					Token::Array(array) | Token::FixedArray(array) | Token::Tuple(array) => {
+						for token in array {
+							payload.extend_from_slice(&pack(&[token.clone()])?);
+						}
+					}
+				}
+			}
+
+			Ok(payload)
 		}
 	}
 
 	pub mod decode {
-		use utils::size_of_packed_token;
+		use ethabi::{decode, ParamType, Token};
+		use std::error::Error;
 
 		use super::*;
 
 		pub fn abi(params: &[ParamType], payload: &[u8]) -> Result<Vec<Token>, Box<dyn Error>> {
-			let tokens = ethabi::decode(params, payload)?;
-			Ok(tokens)
+			Ok(decode(params, payload)?)
 		}
 
-		pub fn packed(params: &[ParamType], mut payload: &[u8]) -> Result<(Vec<Token>, Vec<u8>), Box<dyn Error>> {
+		pub fn pack<'a>(
+			params: &'a [ParamType],
+			mut payload: &'a [u8],
+		) -> Result<(Vec<Token>, Vec<u8>), Box<dyn Error>> {
 			let mut tokens = Vec::new();
 
 			for param in params {
 				match param {
 					ParamType::Address => {
-						if payload.len() < 20 {
-							return Err("Insufficient payload length for Address".into());
-						}
-						let address = Address::from_slice(&payload[..20]);
-						tokens.push(Token::Address(address));
+						ensure_payload_length(&payload, 20, "Address")?;
+						tokens.push(Token::Address(Address::from_slice(&payload[..20])));
 						payload = &payload[20..];
 					}
-					ParamType::Uint(size) => {
-						let byte_size = *size / 8;
-						if payload.len() < byte_size {
-							return Err(format!("Insufficient payload length for Uint of size {}", size).into());
-						}
-						let value = Uint::from_big_endian(&payload[..byte_size]);
-						tokens.push(Token::Uint(value));
+					ParamType::Uint(size) | ParamType::Int(size) => {
+						let byte_size = size / 8;
+						ensure_payload_length(&payload, byte_size, &format!("Uint/Int of size {}", size))?;
+						tokens.push(Token::Uint(payload[..byte_size].into()));
 						payload = &payload[byte_size..];
 					}
 					ParamType::FixedBytes(size) => {
-						if payload.len() < *size {
-							return Err(format!("Insufficient payload length for FixedBytes of size {}", size).into());
-						}
-						let bytes = payload[..*size].to_vec();
-						tokens.push(Token::FixedBytes(bytes));
+						ensure_payload_length(&payload, *size, &format!("FixedBytes of size {}", size))?;
+						tokens.push(Token::FixedBytes(payload[..*size].to_vec()));
 						payload = &payload[*size..];
 					}
-					ParamType::Bytes => {
-						if payload.len() < 32 {
-							return Err("Insufficient payload length for Bytes size".into());
+					ParamType::Bytes | ParamType::String => {
+						ensure_payload_length(&payload, 32, "Bytes/String size")?;
+						let size = Uint::from(&payload[..32]).as_usize();
+						ensure_payload_length(&payload, 32 + size, "Bytes/String")?;
+						if let ParamType::Bytes = param {
+							tokens.push(Token::Bytes(payload[32..32 + size].to_vec()));
+						} else {
+							tokens.push(Token::String(String::from_utf8(payload[32..32 + size].to_vec())?));
 						}
-						let size = Uint::from_big_endian(&payload[..32]).as_usize();
-						if payload.len() < 32 + size {
-							return Err("Insufficient payload length for Bytes".into());
-						}
-						let bytes = payload[32..32 + size].to_vec();
-						tokens.push(Token::Bytes(bytes));
 						payload = &payload[32 + size..];
-					}
-					ParamType::String => {
-						if payload.len() < 32 {
-							return Err("Insufficient payload length for String size".into());
-						}
-						let size = Uint::from_big_endian(&payload[..32]).as_usize();
-						if payload.len() < 32 + size {
-							return Err("Insufficient payload length for String".into());
-						}
-						let string = String::from_utf8(payload[32..32 + size].to_vec())?;
-						tokens.push(Token::String(string));
-						payload = &payload[32 + size..];
-					}
-					ParamType::Int(size) => {
-						let byte_size = *size / 8;
-						if payload.len() < byte_size {
-							return Err(format!("Insufficient payload length for Int of size {}", size).into());
-						}
-						let value = Uint::from_big_endian(&payload[..byte_size]);
-						tokens.push(Token::Int(value));
-						payload = &payload[byte_size..];
 					}
 					ParamType::Bool => {
-						if payload.is_empty() {
-							return Err("Insufficient payload length for Bool".into());
-						}
-						let value = payload[0] != 0;
-						tokens.push(Token::Bool(value));
+						ensure_payload_length(&payload, 1, "Bool")?;
+						tokens.push(Token::Bool(payload[0] != 0));
 						payload = &payload[1..];
 					}
 					ParamType::Array(param) => {
-						if payload.len() < 32 {
-							return Err("Insufficient payload length for Array size".into());
-						}
-						let size = Uint::from_big_endian(&payload[..32]).as_usize();
+						ensure_payload_length(&payload, 32, "Array size")?;
+						let size = Uint::from(&payload[..32]).as_usize();
 						payload = &payload[32..];
-						let mut array = Vec::new();
-						for _ in 0..size {
-							let token = packed(&[*param.clone()], payload)?;
-							array.push(token.0[0].clone());
-							payload = &payload[size_of_packed_token(&token.0[0])..];
-						}
-						tokens.push(Token::Array(array));
+						let array = parse_array(param, size, payload)?;
+						tokens.push(Token::Array(array.0));
+						payload = array.1;
 					}
 					ParamType::FixedArray(param, size) => {
-						let mut array = Vec::new();
-						for _ in 0..*size {
-							let token = packed(&[*param.clone()], payload)?;
-							array.push(token.0[0].clone());
-							payload = &payload[size_of_packed_token(&token.0[0])..];
-						}
-						tokens.push(Token::FixedArray(array));
+						let array = parse_fixed_array(param, *size, payload)?;
+						tokens.push(Token::FixedArray(array.0));
+						payload = array.1;
 					}
 					ParamType::Tuple(params) => {
-						let mut tuple = Vec::new();
-						for param in params {
-							let token = packed(&[param.clone()], payload)?;
-							tuple.push(token.0[0].clone());
-							payload = &payload[size_of_packed_token(&token.0[0])..];
-						}
-						tokens.push(Token::Tuple(tuple));
+						let tuple = parse_tuple(params, payload)?;
+						tokens.push(Token::Tuple(tuple.0));
+						payload = tuple.1;
 					}
 				}
 			}
 
 			Ok((tokens, payload.to_vec()))
+		}
+
+		fn ensure_payload_length(payload: &[u8], required_len: usize, type_desc: &str) -> Result<(), Box<dyn Error>> {
+			if payload.len() < required_len {
+				Err(format!("Insufficient payload length for {}", type_desc).into())
+			} else {
+				Ok(())
+			}
+		}
+
+		fn parse_array<'a>(
+			param: &'a ParamType,
+			size: usize,
+			mut payload: &'a [u8],
+		) -> Result<(Vec<Token>, &'a [u8]), Box<dyn Error>> {
+			let mut array = Vec::new();
+			for _ in 0..size {
+				let token = pack(&[param.clone()], payload)?;
+				array.push(token.0[0].clone());
+				payload = &payload[utils::size_of_packed_token(&token.0[0])..];
+			}
+			Ok((array, payload))
+		}
+
+		fn parse_fixed_array<'a>(
+			param: &'a ParamType,
+			size: usize,
+			mut payload: &'a [u8],
+		) -> Result<(Vec<Token>, &'a [u8]), Box<dyn Error>> {
+			let mut array = Vec::new();
+			for _ in 0..size {
+				let token = pack(&[param.clone()], payload)?;
+				array.push(token.0[0].clone());
+				payload = &payload[utils::size_of_packed_token(&token.0[0])..];
+			}
+			Ok((array, payload))
+		}
+
+		fn parse_tuple<'a>(
+			params: &'a [ParamType],
+			mut payload: &'a [u8],
+		) -> Result<(Vec<Token>, &'a [u8]), Box<dyn Error>> {
+			let mut tuple = Vec::new();
+			for param in params {
+				let token = pack(&[param.clone()], payload)?;
+				tuple.push(token.0[0].clone());
+				payload = &payload[utils::size_of_packed_token(&token.0[0])..];
+			}
+			Ok((tuple, payload))
 		}
 	}
 
@@ -199,7 +247,13 @@ pub mod abi {
 		pub fn deposit(payload: Vec<u8>) -> Result<Vec<Token>, Box<dyn Error>> {
 			let params = [ParamType::Address, ParamType::Uint(256)];
 
-			decode::packed(&params, payload.as_ref()).map(|(tokens, _)| tokens)
+			decode::pack(&params, payload.as_ref()).map(|(tokens, _)| tokens)
+		}
+
+		pub fn deposit_payload(address: Address, value: Uint) -> Result<Vec<u8>, Box<dyn Error>> {
+			let tokens = vec![Token::Address(address), Token::Uint(value)];
+
+			encode::pack(&tokens)
 		}
 
 		pub fn withdraw(address: Address, value: Uint) -> Result<Vec<u8>, Box<dyn Error>> {
@@ -236,7 +290,21 @@ pub mod abi {
 		pub fn deposit(payload: Vec<u8>) -> Result<Vec<Token>, Box<dyn Error>> {
 			let params = [ParamType::Address, ParamType::Address, ParamType::Uint(256)];
 
-			decode::packed(&params, payload.as_ref()).map(|(tokens, _)| tokens)
+			decode::pack(&params, payload.as_ref()).map(|(tokens, _)| tokens)
+		}
+
+		pub fn deposit_payload(
+			wallet_address: Address,
+			token_address: Address,
+			value: Uint,
+		) -> Result<Vec<u8>, Box<dyn Error>> {
+			let tokens = vec![
+				Token::Address(token_address),
+				Token::Address(wallet_address),
+				Token::Uint(value),
+			];
+
+			encode::pack(&tokens)
 		}
 
 		pub fn withdraw(address: Address, value: Uint) -> Result<Vec<u8>, Box<dyn Error>> {
@@ -273,7 +341,21 @@ pub mod abi {
 		pub fn deposit(payload: Vec<u8>) -> Result<Vec<Token>, Box<dyn Error>> {
 			let params = [ParamType::Address, ParamType::Address, ParamType::Uint(256)];
 
-			decode::packed(&params, payload.as_ref()).map(|(tokens, _)| tokens)
+			decode::pack(&params, payload.as_ref()).map(|(tokens, _)| tokens)
+		}
+
+		pub fn deposit_payload(
+			wallet_address: Address,
+			token_address: Address,
+			token_id: Uint,
+		) -> Result<Vec<u8>, Box<dyn Error>> {
+			let tokens = vec![
+				Token::Address(token_address),
+				Token::Address(wallet_address),
+				Token::Uint(token_id),
+			];
+
+			encode::pack(&tokens)
 		}
 
 		pub fn withdraw(dapp_address: Address, address: Address, token_id: Uint) -> Result<Vec<u8>, Box<dyn Error>> {
@@ -324,13 +406,13 @@ pub mod abi {
 				ParamType::Uint(256),
 			];
 
-			decode::packed(&params, payload.as_ref()).map(|(tokens, _)| tokens)
+			decode::pack(&params, payload.as_ref()).map(|(tokens, _)| tokens)
 		}
 
 		pub fn batch_deposit(payload: Vec<u8>) -> Result<Vec<Token>, Box<dyn Error>> {
 			let params = [ParamType::Address, ParamType::Address];
 
-			let (addresses_tokens, payload) = decode::packed(&params, payload.as_ref())?;
+			let (addresses_tokens, payload) = decode::pack(&params, payload.as_ref())?;
 
 			let params = [
 				ParamType::Array(Box::new(ParamType::Uint(256))),
@@ -340,6 +422,44 @@ pub mod abi {
 			let values_tokens = decode::abi(&params, payload.as_ref())?;
 
 			Ok([addresses_tokens, values_tokens].concat())
+		}
+
+		pub fn single_deposit_payload(
+			wallet_address: Address,
+			token_address: Address,
+			token_id: Uint,
+			amount: Uint,
+		) -> Result<Vec<u8>, Box<dyn Error>> {
+			let tokens = vec![
+				Token::Address(token_address),
+				Token::Address(wallet_address),
+				Token::Uint(token_id),
+				Token::Uint(amount),
+			];
+
+			encode::pack(&tokens)
+		}
+
+		pub fn batch_deposit_payload(
+			wallet_address: Address,
+			token_address: Address,
+			ids_amounts: Vec<(Uint, Uint)>,
+		) -> Result<Vec<u8>, Box<dyn Error>> {
+			let ids = ids_amounts.iter().map(|(id, _)| Token::Uint(id.clone())).collect();
+			let amounts = ids_amounts
+				.iter()
+				.map(|(_, amount)| ethabi::Token::Uint(amount.clone()))
+				.collect();
+
+			let ids_amounts_bytes = encode::abi(&[Token::Array(ids), Token::Array(amounts)])?;
+
+			let tokens = vec![Token::Address(token_address), Token::Address(wallet_address)];
+
+			Ok(encode::pack(&tokens)?
+				.iter()
+				.chain(ids_amounts_bytes.iter())
+				.cloned()
+				.collect())
 		}
 
 		pub fn single_withdraw(

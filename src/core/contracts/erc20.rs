@@ -83,16 +83,12 @@ impl ERC20Wallet {
 		Ok((deposit, payload[abi::utils::size_of_packed_tokens(&args)..].to_vec()))
 	}
 
-	pub fn deposit_payload(wallet_address: Address, token_address: Address, value: Uint) -> Vec<u8> {
-		let mut value_bytes = vec![0u8; 32];
-		value.to_big_endian(&mut value_bytes);
-
-		let mut payload = vec![0u8; 72];
-		payload[0..20].copy_from_slice(wallet_address.as_ref());
-		payload[20..40].copy_from_slice(token_address.as_ref());
-		payload[40..72].copy_from_slice(&value_bytes);
-
-		payload
+	pub fn deposit_payload(
+		wallet_address: Address,
+		token_address: Address,
+		value: Uint,
+	) -> Result<Vec<u8>, Box<dyn Error>> {
+		abi::erc20::deposit_payload(wallet_address, token_address, value)
 	}
 
 	pub fn withdraw(
@@ -106,9 +102,15 @@ impl ERC20Wallet {
 			.checked_sub(value)
 			.ok_or("insufficient funds")?;
 
-		self.set_balance(wallet_address, token_address, new_balance);
+		let result = abi::erc20::withdraw(wallet_address, value);
 
-		Ok(abi::erc20::withdraw(wallet_address, value)?)
+		match result {
+			Ok(payload) => {
+				self.set_balance(wallet_address, token_address, new_balance);
+				Ok(payload)
+			}
+			Err(e) => Err(e),
+		}
 	}
 }
 
@@ -203,14 +205,8 @@ mod tests {
 		let token_address = address!("0x0000000000000000000000000000000000000002");
 		let value = Uint::from(1_000_000_000_000_000_000u64);
 
-		let mut value_bytes = vec![0u8; 32];
-		value.to_big_endian(&mut value_bytes);
-
-		let mut payload = vec![0u8; 72];
-
-		payload[0..20].copy_from_slice(token_address.as_bytes());
-		payload[20..40].copy_from_slice(wallet_address.as_bytes());
-		payload[40..72].copy_from_slice(&value_bytes);
+		let payload = ERC20Wallet::deposit_payload(wallet_address, token_address, value)
+			.expect("deposit payload creation failed");
 
 		let result = wallet.deposit(payload.to_vec());
 

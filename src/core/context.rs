@@ -1,5 +1,5 @@
 use super::environment::Rollup;
-use super::{application::Application, environment::RollupExtraEnvironment};
+use super::{application::Application, environment::RollupInternalEnvironment};
 use crate::types::machine::{Advance, Inspect};
 use crate::{
 	prelude::{Address, Deposit},
@@ -72,7 +72,7 @@ impl RunOptionsBuilder {
 	}
 }
 
-pub async fn handle_portals<R: RollupExtraEnvironment>(
+pub async fn handle_portals<R: RollupInternalEnvironment>(
 	rollup: &R,
 	sender: Address,
 	payload: Vec<u8>,
@@ -85,19 +85,35 @@ pub async fn handle_portals<R: RollupExtraEnvironment>(
 		}
 		sender if sender == rollup.get_address_book().erc20_portal => {
 			debug!("Advance input from ERC20Portal({})", sender);
-			Ok(None)
+			let (erc20_deposit, _) = rollup.get_erc20_wallet().write().await.deposit(payload.clone())?;
+
+			Ok(Some(erc20_deposit))
 		}
 		sender if sender == rollup.get_address_book().erc721_portal => {
 			debug!("Advance input from ERC721Portal({})", sender);
-			Ok(None)
+			let (erc721_deposit, _) = rollup.get_erc721_wallet().write().await.deposit(payload.clone())?;
+
+			Ok(Some(erc721_deposit))
 		}
 		sender if sender == rollup.get_address_book().erc1155_single_portal => {
 			debug!("Advance input from ERC1155SinglePortal({})", sender);
-			Ok(None)
+			let (erc1155_deposit, _) = rollup
+				.get_erc1155_wallet()
+				.write()
+				.await
+				.single_deposit(payload.clone())?;
+
+			Ok(Some(erc1155_deposit))
 		}
 		sender if sender == rollup.get_address_book().erc1155_batch_portal => {
 			debug!("Advance input from ERC1155BatchPortal({})", sender);
-			Ok(None)
+			let (erc1155_deposit, _) = rollup
+				.get_erc1155_wallet()
+				.write()
+				.await
+				.batch_deposit(payload.clone())?;
+
+			Ok(Some(erc1155_deposit))
 		}
 		_ => {
 			debug!("Advance input from an unknown address");
@@ -106,7 +122,7 @@ pub async fn handle_portals<R: RollupExtraEnvironment>(
 	}
 }
 
-pub fn is_portal<R: RollupExtraEnvironment>(rollup: &R, sender: Address) -> bool {
+pub fn is_portal<R: RollupInternalEnvironment>(rollup: &R, sender: Address) -> bool {
 	sender == rollup.get_address_book().ether_portal
 		|| sender == rollup.get_address_book().erc20_portal
 		|| sender == rollup.get_address_book().erc721_portal

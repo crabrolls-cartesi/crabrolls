@@ -17,7 +17,10 @@ pub mod prelude {
 		testing::{MockupOptions, Tester},
 	};
 
-	pub use crate::types::machine::{Deposit, FinishStatus, Metadata, Output, PortalHandlerConfig};
+	pub use crate::types::{
+		machine::{Deposit, FinishStatus, Metadata, Output, PortalHandlerConfig},
+		testing::{AdvanceResult, InspectResult, ResultUtils},
+	};
 
 	pub use crate::utils::{address_book::AddressBook, units};
 

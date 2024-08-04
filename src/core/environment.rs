@@ -1,3 +1,4 @@
+use super::contracts::erc1155::{ERC1155Environment, ERC1155Wallet, IntoIdsAmountsIter};
 use super::contracts::erc20::{ERC20Environment, ERC20Wallet};
 use super::contracts::erc721::{ERC721Environment, ERC721Wallet};
 use super::contracts::ether::{EtherEnvironment, EtherWallet};
@@ -11,7 +12,9 @@ use std::error::Error;
 use std::future::Future;
 use std::sync::Arc;
 
-pub trait Environment: EtherEnvironment + ERC20Environment + ERC721Environment {
+pub trait Environment:
+	EtherEnvironment + ERC20Environment + ERC721Environment + ERC1155Environment + RollupInternalEnvironment
+{
 	fn send_voucher(
 		&self,
 		destination: Address,
@@ -24,9 +27,12 @@ pub trait Environment: EtherEnvironment + ERC20Environment + ERC721Environment {
 	fn send_report(&self, payload: impl AsRef<[u8]> + Send) -> impl Future<Output = Result<(), Box<dyn Error>>> + Send;
 }
 
-pub trait RollupExtraEnvironment {
+pub trait RollupInternalEnvironment {
 	fn get_address_book(&self) -> AddressBook;
 	fn get_ether_wallet(&self) -> Arc<RwLock<EtherWallet>>;
+	fn get_erc20_wallet(&self) -> Arc<RwLock<ERC20Wallet>>;
+	fn get_erc721_wallet(&self) -> Arc<RwLock<ERC721Wallet>>;
+	fn get_erc1155_wallet(&self) -> Arc<RwLock<ERC1155Wallet>>;
 }
 
 pub struct Rollup {
@@ -37,6 +43,7 @@ pub struct Rollup {
 	ether_wallet: Arc<RwLock<EtherWallet>>,
 	erc20_wallet: Arc<RwLock<ERC20Wallet>>,
 	erc721_wallet: Arc<RwLock<ERC721Wallet>>,
+	erc1155_wallet: Arc<RwLock<ERC1155Wallet>>,
 }
 
 impl Rollup {
@@ -48,6 +55,7 @@ impl Rollup {
 			ether_wallet: Arc::new(RwLock::new(EtherWallet::new())),
 			erc20_wallet: Arc::new(RwLock::new(ERC20Wallet::new())),
 			erc721_wallet: Arc::new(RwLock::new(ERC721Wallet::new())),
+			erc1155_wallet: Arc::new(RwLock::new(ERC1155Wallet::new())),
 		}
 	}
 
@@ -57,13 +65,25 @@ impl Rollup {
 	}
 }
 
-impl RollupExtraEnvironment for Rollup {
+impl RollupInternalEnvironment for Rollup {
 	fn get_address_book(&self) -> AddressBook {
 		self.address_book.clone()
 	}
 
 	fn get_ether_wallet(&self) -> Arc<RwLock<EtherWallet>> {
 		self.ether_wallet.clone()
+	}
+
+	fn get_erc20_wallet(&self) -> Arc<RwLock<ERC20Wallet>> {
+		self.erc20_wallet.clone()
+	}
+
+	fn get_erc721_wallet(&self) -> Arc<RwLock<ERC721Wallet>> {
+		self.erc721_wallet.clone()
+	}
+
+	fn get_erc1155_wallet(&self) -> Arc<RwLock<ERC1155Wallet>> {
+		self.erc1155_wallet.clone()
 	}
 }
 
@@ -121,11 +141,6 @@ impl EtherEnvironment for Rollup {
 	}
 
 	async fn ether_transfer(&self, source: Address, destination: Address, value: Uint) -> Result<(), Box<dyn Error>> {
-		let app_address = self.app_address.read().await;
-		if app_address.is_none() {
-			return Err(Box::from("App address is not set"));
-		}
-
 		let mut ether_wallet = self.ether_wallet.write().await;
 		ether_wallet.transfer(source, destination, value)?;
 
@@ -218,6 +233,64 @@ impl ERC721Environment for Rollup {
 
 	async fn erc721_owner_of(&self, token_address: Address, token_id: Uint) -> Option<Address> {
 		self.erc721_wallet.read().await.owner_of(token_address, token_id)
+	}
+}
+
+impl ERC1155Environment for Rollup {
+	async fn erc1155_addresses(&self) -> Vec<Address> {
+		self.erc1155_wallet.read().await.addresses()
+	}
+
+	async fn erc1155_withdraw<I>(
+		&self,
+		wallet_address: Address,
+		token_address: Address,
+		withdrawals: I,
+		data: Option<Vec<u8>>,
+	) -> Result<(), Box<dyn Error>>
+	where
+		I: IntoIdsAmountsIter,
+	{
+		let app_address = self.app_address.read().await;
+		if app_address.is_none() {
+			return Err(Box::from("App address is not set"));
+		}
+
+		let mut erc1155_wallet = self.erc1155_wallet.write().await;
+		let payload = erc1155_wallet.withdraw(
+			app_address.expect("App address is not set"),
+			wallet_address,
+			token_address,
+			withdrawals,
+			data,
+		)?;
+
+		self.send_voucher(token_address, payload).await?;
+
+		Ok(())
+	}
+
+	async fn erc1155_transfer<I>(
+		&self,
+		src_wallet: Address,
+		dst_wallet: Address,
+		token_address: Address,
+		transfers: I,
+	) -> Result<(), Box<dyn Error>>
+	where
+		I: IntoIdsAmountsIter,
+	{
+		let mut erc1155_wallet = self.erc1155_wallet.write().await;
+		erc1155_wallet.transfer(src_wallet, dst_wallet, token_address, transfers)?;
+
+		Ok(())
+	}
+
+	async fn erc1155_balance(&self, wallet_address: Address, token_address: Address, token_id: Uint) -> Uint {
+		self.erc1155_wallet
+			.read()
+			.await
+			.balance_of(wallet_address, token_address, token_id)
 	}
 }
 

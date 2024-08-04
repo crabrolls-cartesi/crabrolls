@@ -49,15 +49,8 @@ impl EtherWallet {
 		Ok((deposit, payload[abi::utils::size_of_packed_tokens(&args)..].to_vec()))
 	}
 
-	pub fn deposit_payload(sender: Address, value: Uint) -> Vec<u8> {
-		let mut value_bytes = vec![0u8; 32];
-		value.to_big_endian(&mut value_bytes);
-
-		let mut payload = vec![0u8; 52];
-		payload[0..20].copy_from_slice(&sender.0);
-		payload[20..52].copy_from_slice(&value_bytes);
-
-		payload
+	pub fn deposit_payload(sender: Address, value: Uint) -> Result<Vec<u8>, Box<dyn Error>> {
+		abi::ether::deposit_payload(sender, value)
 	}
 
 	pub fn transfer(&mut self, src: Address, dst: Address, value: Uint) -> Result<(), Box<dyn Error>> {
@@ -83,9 +76,15 @@ impl EtherWallet {
 			return Err("insufficient funds".into());
 		}
 
-		self.set_balance(address, new_balance);
+		let result = abi::ether::withdraw(address, value);
 
-		Ok(abi::ether::withdraw(address, value)?)
+		match result {
+			Ok(payload) => {
+				self.set_balance(address, new_balance);
+				Ok(payload)
+			}
+			Err(err) => Err(err.into()),
+		}
 	}
 }
 

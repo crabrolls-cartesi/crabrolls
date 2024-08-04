@@ -148,12 +148,9 @@ async fn main() {
 		eprintln!("Error: {}", e);
 	}
 }
-
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crabrolls::prelude::*;
-	use std::sync::Arc;
 
 	async fn extract_posts(output: &Output) -> Vec<Post> {
 		match output {
@@ -186,21 +183,21 @@ mod tests {
 
 		let result = tester.advance(Address::default(), add_payload.clone()).await;
 
-		assert_eq!(result.status, FinishStatus::Accept);
-		assert!(result.error.is_none());
+		assert!(result.is_accepted(), "Expected Accept status");
+		assert!(result.get_error().is_none(), "Expected no error");
 
 		let expected_post = Post {
 			id: 1,
 			title: "First Post".into(),
 			content: "This is the first post.".into(),
 		};
-		let posts = extract_posts(&result.outputs[1]).await;
+		let posts = extract_posts(&result.get_outputs()[1]).await;
 		assert_eq!(posts.len(), 1, "Expected one post, found {}", posts.len());
 		assert_eq!(posts[0], expected_post);
 
 		let expected_string =
 			serde_json::to_string(&vec![expected_post]).expect("Failed to serialize expected post list");
-		let result_string = extract_string(&result.outputs[1]).await;
+		let result_string = extract_string(&result.get_outputs()[1]).await;
 		assert_eq!(
 			result_string, expected_string,
 			"Expected post list string: {}, but found: {}",
@@ -230,21 +227,21 @@ mod tests {
 
 		let result = tester.advance(Address::default(), update_payload.clone()).await;
 
-		assert_eq!(result.status, FinishStatus::Accept);
-		assert!(result.error.is_none());
+		assert!(result.is_accepted(), "Expected Accept status");
+		assert!(result.get_error().is_none(), "Expected no error");
 
 		let expected_post = Post {
 			id: 1,
 			title: "Updated First Post".into(),
 			content: "This is the first post.".into(),
 		};
-		let posts = extract_posts(&result.outputs[1]).await;
+		let posts = extract_posts(&result.get_outputs()[1]).await;
 		assert_eq!(posts.len(), 1, "Expected one post, found {}", posts.len());
 		assert_eq!(posts[0], expected_post);
 
 		let expected_string =
 			serde_json::to_string(&vec![expected_post]).expect("Failed to serialize expected post list");
-		let result_string = extract_string(&result.outputs[1]).await;
+		let result_string = extract_string(&result.get_outputs()[1]).await;
 		assert_eq!(
 			result_string, expected_string,
 			"Expected post list string: {}, but found: {}",
@@ -270,15 +267,15 @@ mod tests {
 
 		let result = tester.advance(Address::default(), delete_payload.clone()).await;
 
-		assert_eq!(result.status, FinishStatus::Accept);
-		assert!(result.error.is_none());
+		assert!(result.is_accepted(), "Expected Accept status");
+		assert!(result.get_error().is_none(), "Expected no error");
 
-		let posts = extract_posts(&result.outputs[1]).await;
+		let posts = extract_posts(&result.get_outputs()[1]).await;
 		assert!(posts.is_empty(), "Expected no posts, found {:?}", posts);
 
 		let expected_string =
 			serde_json::to_string(&vec![] as &Vec<Post>).expect("Failed to serialize expected post list");
-		let result_string = extract_string(&result.outputs[1]).await;
+		let result_string = extract_string(&result.get_outputs()[1]).await;
 		assert_eq!(
 			result_string, expected_string,
 			"Expected post list string: {}, but found: {}",
@@ -300,7 +297,7 @@ mod tests {
 
 		let result = tester.advance(Address::default(), update_payload.clone()).await;
 
-		assert_eq!(result.status, FinishStatus::Reject);
-		assert!(result.error.is_some());
+		assert!(result.is_rejected(), "Expected Reject status");
+		assert!(result.get_error().is_some(), "Expected an error");
 	}
 }

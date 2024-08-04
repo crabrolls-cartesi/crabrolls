@@ -1,5 +1,5 @@
 use crate::{
-	core::contracts::{erc20::ERC20Wallet, ether::EtherWallet},
+	core::contracts::{erc1155::ERC1155Wallet, erc20::ERC20Wallet, erc721::ERC721Wallet, ether::EtherWallet},
 	utils::parsers::deserializers::*,
 };
 use ethabi::{Address, Uint};
@@ -74,38 +74,26 @@ pub enum Deposit {
 		token: Address,
 		id: Uint,
 	},
-	ERC1155Single {
+	ERC1155 {
 		sender: Address,
 		token: Address,
-		id: Uint,
-		amount: Uint,
-	},
-	ERC1155Batch {
-		sender: Address,
-		token: Address,
-		ids: Vec<Uint>,
-		amounts: Vec<Uint>,
+		ids_amounts: Vec<(Uint, Uint)>,
 	},
 }
 
-impl From<Deposit> for Vec<u8> {
-	fn from(deposit: Deposit) -> Self {
+impl TryFrom<Deposit> for Vec<u8> {
+	type Error = Box<dyn std::error::Error>;
+
+	fn try_from(deposit: Deposit) -> Result<Self, Self::Error> {
 		match deposit {
-			Deposit::Ether { sender, amount } => EtherWallet::deposit_payload(sender, amount),
-			Deposit::ERC20 { sender, token, amount } => ERC20Wallet::deposit_payload(sender, token, amount),
-			Deposit::ERC721 { sender, token, id } => todo!(),
-			Deposit::ERC1155Single {
+			Deposit::Ether { sender, amount } => Ok(EtherWallet::deposit_payload(sender, amount)?),
+			Deposit::ERC20 { sender, token, amount } => Ok(ERC20Wallet::deposit_payload(sender, token, amount)?),
+			Deposit::ERC721 { sender, token, id } => Ok(ERC721Wallet::deposit_payload(sender, token, id)?),
+			Deposit::ERC1155 {
 				sender,
 				token,
-				id,
-				amount,
-			} => todo!(),
-			Deposit::ERC1155Batch {
-				sender,
-				token,
-				ids,
-				amounts,
-			} => todo!(),
+				ids_amounts,
+			} => Ok(ERC1155Wallet::deposit_payload(sender, token, ids_amounts)?),
 		}
 	}
 }
