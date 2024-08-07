@@ -50,6 +50,7 @@ async fn main() {
 mod tests {
 	use super::EchoApp;
 	use crabrolls::prelude::*;
+	use ethabi::Address;
 
 	#[async_std::test]
 	async fn test_echo() {
