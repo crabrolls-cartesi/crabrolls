@@ -5,11 +5,11 @@ description: A simple echo application that sends back the received message.
 
 import { Aside } from '@astrojs/starlight/components';
 
-<Aside>See the [New Project or Example](../../new-project) guide to learn how to run the examples or how to start a new project.</Aside>
+<Aside>See the [New Project or Example](../new-project) guide to learn how to run the examples or how to start a new project.</Aside>
 
 ## Overview
 
-The Echo application is a simple implementation that demonstrates the basic functionalities of the framework. It receives a message, processes it, and sends back the message as a notice, report, and voucher. This document outlines how to use the Echo application, including sending inputs and inspecting outputs. You can find the source code of the Echo application in the [CrabRolls repository](https://github.com/crabrolls-cartesi/crabrolls/blob/main/examples/echo.rs).
+The Echo application is a simple implementation that demonstrates the basic functionalities of the framework. It receives a message, processes it, and sends back the message as a notice, report, and voucher. This document outlines how to use the Echo application, including sending inputs and inspecting outputs. You can find the source code in the [CrabRolls repository](https://github.com/crabrolls-cartesi/crabrolls/blob/main/examples/echo.rs).
 
 ## Usage
 
@@ -60,7 +60,7 @@ this will return the last entries of the application, including the notice, repo
 									"node": {
 										"index": 0,
 										"payload": "0x48692043726162726f6c6c7321",
-										"destination": "0xdeadbeef"
+										"destination": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
 									}
 								}
 							]
@@ -73,14 +73,14 @@ this will return the last entries of the application, including the notice, repo
 }
 ```
 
-And that's it! You have successfully used the Echo application to send and receive messages, now you can decode the response payload `0x48692043726162726f6c6c7321` using the command:
+And that's it! You have successfully used the Echo application to send and receive messages, now you can decode the response payload `0x48692043726162726f6c6c7321` using the command [cast](https://book.getfoundry.sh/cast/) from `foundry`:
 
 ```bash title="Terminal" "0x48692043726162726f6c6c7321"
-echo "0x48692043726162726f6c6c7321" | xxd -r -p
+cast to-ascii 0x48692043726162726f6c6c7321
 ```
 
 This will return the message:
 
-```json title="Response"
-"Hi Crabrolls!"
+```text title="Response"
+Hi Crabrolls!
 ```

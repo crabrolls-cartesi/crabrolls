@@ -35,9 +35,9 @@ export default defineConfig({
 					},
 				},
 				{
-					label: 'Advanced',
+					label: 'Usage',
 					autogenerate: {
-						directory: 'advanced',
+						directory: 'usage',
 					},
 				},
 			],

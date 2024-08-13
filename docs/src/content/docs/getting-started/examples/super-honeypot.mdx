@@ -1,0 +1,387 @@
+---
+title: Super Honeypot
+description: A Super Honeypot application, managing deposits, withdrawals, and balance inspections for various token standards.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Aside>See the [New Project or Example](../new-project) guide to learn how to run the examples or how to start a new project.</Aside>
+
+## Overview
+
+The SuperHoneypot application is a robust example that demonstrates handling deposits, withdrawals, and balance inspections for Ether, ERC20, ERC721, and ERC1155 tokens using the Crabrolls framework. This document details the application's usage, including how to send JSON-based inputs and inspect outputs. You can find the source code in the [CrabRolls repository](https://github.com/crabrolls-cartesi/crabrolls/blob/main/examples/super_honeypot.rs).
+
+## Usage
+
+The application allows you to interact with various token standards by sending JSON-encoded messages. These can be executed using the `send` command from the [Cartesi CLI](https://github.com/cartesi/cli) tool. Below are examples for different operations.
+
+<Aside>All the highlighted text in the JSON templates should be replaced with actual values you want to use.</Aside>
+
+### Depositing new assets
+
+To make deposits into the application, use the cartesi CLI to send a asset deposit to the respective portal. Send this input using the `send` command and provide the data of deposit:
+
+<Tabs>
+  <TabItem label="Ether" icon="star">
+    ```bash title="Terminal" "8"
+    cartesi send ether --amount 8
+    ```
+  </TabItem>
+  <TabItem label="ERC20" icon="star">
+    ```bash title="Terminal" /0x[0-9a-fA-F]{2,}/ "10"
+    cartesi send erc20 --token 0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef --amount 10
+    ```
+  </TabItem>
+  <TabItem label="ERC721" icon="star">
+    ```bash title="Terminal" /0x[0-9a-fA-F]{2,}/
+    cartesi send erc721 --token 0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef --tokenId 0
+    ```
+  </TabItem>
+  <TabItem label="ERC1155" icon="star">
+    Currently the `cartesi send` does not support ERC1155 deposits, so you can use the cartesi explorer to send the deposit, so you need to run the application using the `cartesi run` from [Cartesi CLI](https://github.com/cartesi/cli) command and then use the explorer to send the deposit.
+
+    ![deposit_explorer_erc1155](https://github.com/user-attachments/assets/a0b5230a-39eb-4f98-8d78-4643f053ae93)
+
+  </TabItem>
+</Tabs>
+
+### Ether Operations
+
+#### Withdrawing Ether
+
+To withdraw all Ether from the sender's account, use the following JSON input:
+
+```json title="Template"
+{
+	"kind": "ether",
+	"metadata": {}
+}
+```
+
+Send this input using the `send` command:
+
+```bash title="Terminal"
+cartesi send generic --input='{
+  "kind": "ether",
+  "metadata": {}
+}'
+```
+
+Now you can view the vouncher in the `Cartesi Explorer` and execute the withdrawal.
+
+#### Inspecting Ether Balance
+
+To inspect the Ether balance of a specific address, use the following JSON input:
+
+```json title="Template" /0x[0-9a-fA-F]{2,}/
+{
+	"kind": "ether",
+	"metadata": {
+		"address": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+	}
+}
+```
+
+Send this input using the `curl` command to `inspect` the application:
+
+```bash title="Terminal" "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+curl 'http://localhost:8080/inspect' \
+    -H 'Content-Type: application/json' \
+    -d \ '{
+        "kind": "ether",
+        "metadata": {
+            "address": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+        }
+    }' \
+    | jq
+```
+
+Example of the response:
+
+```json title="Response" /0x[0-9a-fA-F]{2,}/
+{
+	"exception_payload": "0x",
+	"processed_input_count": 1,
+	"reports": [
+		{
+			"payload": "0x31303030303030303030303030303030303030"
+		}
+	],
+	"status": "Accepted"
+}
+```
+
+Using the command [cast](https://book.getfoundry.sh/cast/) from `foundry` you can decode the response payload `0x30`:
+
+```bash title="Terminal" /0x[0-9a-fA-F]{2,}/
+cast to-ascii 0x31303030303030303030303030303030303030
+```
+
+Returning in this case the balance of the address `0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef`.
+
+```text title="Response"
+1000000000000000000
+```
+
+The value of `1000000000000000000` is equivalent to `1` Ether of balance, you can use the `cast from-wei` to convert the value to Ether.
+
+```bash title="Terminal" "1000000000000000000"
+cast from-wei 1000000000000000000
+```
+
+Returning the value of `1` Ether.
+
+```text title="Response"
+1.000000000000000000
+```
+
+### ERC20 Operations
+
+#### Withdrawing ERC20 Tokens
+
+To withdraw ERC20 tokens from the sender's account, use the following JSON input:
+
+```json title="Template" /0x[0-9a-fA-F]{2,}/
+{
+	"kind": "erc20",
+	"metadata": {
+		"token": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+	}
+}
+```
+
+Send this input using the `send` command:
+
+```bash title="Terminal" /0x[0-9a-fA-F]{2,}/
+cartesi send generic --input='{
+  "kind": "erc20",
+  "metadata": {
+    "token": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+  }
+}'
+```
+
+Now you can view the voucher in the `Cartesi Explorer` and execute the withdrawal.
+
+#### Inspecting ERC20 Balance
+
+To inspect the ERC20 balance of a specific address, use the following JSON input:
+
+```json title="Template" /0x[0-9a-fA-F]{2,}/
+{
+	"kind": "erc20",
+	"metadata": {
+		"token": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+		"address": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+	}
+}
+```
+
+Send this input using the `curl` command to `inspect` the application:
+
+```bash title="Terminal" "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+curl 'http://localhost:8080/inspect' \
+    -H 'Content-Type: application/json' \
+    -d \ '{
+        "kind": "erc20",
+        "metadata": {
+            "token": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+            "address": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+        }
+    }' \
+    | jq
+```
+
+Example of the response:
+
+```json title="Response" /0x[0-9a-fA-F]{2,}/
+{
+	"exception_payload": "0x",
+	"processed_input_count": 1,
+	"reports": [
+		{
+			"payload": "0x31303030303030303030303030303030303030"
+		}
+	],
+	"status": "Accepted"
+}
+```
+
+Using the `cast` command from `foundry`, decode the response payload:
+
+```bash title="Terminal" /0x[0-9a-fA-F]{2,}/
+cast to-ascii 0x31303030303030303030303030303030303030
+```
+
+Returning the balance of the address:
+
+```text title="Response"
+1000000000000000000
+```
+
+### ERC721 Operations
+
+#### Withdrawing ERC721 Tokens
+
+To withdraw an ERC721 token from the sender's account, use the following JSON input:
+
+```json title="Template" /0x[0-9a-fA-F]{2,}/ "144"
+{
+	"kind": "erc721",
+	"metadata": {
+		"token": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+		"id": 144
+	}
+}
+```
+
+Send this input using the `send` command:
+
+```bash title="Terminal" /0x[0-9a-fA-F]{2,}/ "144"
+cartesi send generic --input='{
+  "kind": "erc721",
+  "metadata": {
+    "token": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+    "id": 144
+  }
+}'
+```
+
+Now you can view the voucher in the `Cartesi Explorer` and execute the withdrawal.
+
+#### Inspecting ERC721 Ownership
+
+To inspect the ownership of an ERC721 token, use the following JSON input:
+
+```json title="Template" /0x[0-9a-fA-F]{2,}/ "144"
+{
+	"kind": "erc721",
+	"metadata": {
+		"token": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+		"id": 144
+	}
+}
+```
+
+Send this input using the `curl` command to `inspect` the application:
+
+```bash title="Terminal" /0x[0-9a-fA-F]{2,}/ "144"
+curl 'http://localhost:8080/inspect' \
+    -H 'Content-Type: application/json' \
+    -d \ '{
+        "kind": "erc721",
+        "metadata": {
+            "token": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+            "id": 144
+        }
+    }' \
+    | jq
+```
+
+Example of the response:
+
+```json title="Response" /0x[0-9a-fA-F]{2,}/
+{
+	"exception_payload": "0x",
+	"processed_input_count": 1,
+	"reports": [
+		{
+			"payload": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+		}
+	],
+	"status": "Accepted"
+}
+```
+
+The `payload` field contains the address of the token owner.
+
+### ERC1155 Operations
+
+#### Withdrawing ERC1155 Tokens
+
+To withdraw an ERC1155 token from the sender's account, use the following JSON input:
+
+```json title="Template" /0x[0-9a-fA-F]{2,}/ "256"
+{
+	"kind": "erc1155",
+	"metadata": {
+		"token": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+		"ids": [256]
+	}
+}
+```
+
+Send this input using the `send` command:
+
+```bash title="Terminal" /0x[0-9a-fA-F]{2,}/ "256"
+cartesi send generic --input='{
+  "kind": "erc1155",
+  "metadata": {
+    "token": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+    "id": [256]
+  }
+}'
+```
+
+Now you can view the voucher in the `Cartesi Explorer` and execute the withdrawal.
+
+#### Inspecting ERC1155 Balance
+
+To inspect the balance of a specific ERC1155 token ID, use the following JSON input:
+
+```json title="Template" /0x[0-9a-fA-F]{2,}/ "256"
+{
+	"kind": "erc1155",
+	"metadata": {
+		"token": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+		"address": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+		"id": 256
+	}
+}
+```
+
+Send this input using the `curl` command to `inspect` the application:
+
+```bash title="Terminal" /0x[0-9a-fA-F]{2,}/ "256"
+curl 'http://localhost:8080/inspect' \
+    -H 'Content-Type: application/json' \
+    -d \ '{
+        "kind": "erc1155",
+        "metadata": {
+            "token": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+            "address": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+            "id": 256
+        }
+    }' \
+    | jq
+```
+
+Example of the response:
+
+```json title="Response" /0x[0-9a-fA-F]{2,}/
+{
+	"exception_payload": "0x",
+	"processed_input_count": 1,
+	"reports": [
+		{
+			"payload": "0x3130"
+		}
+	],
+	"status": "Accepted"
+}
+```
+
+Using the `cast` command from `foundry`, decode the response payload:
+
+```bash title="Terminal" /0x[0-9a-fA-F]{2,}/
+cast to-ascii 0x3130
+```
+
+Returning the balance of the token ID:
+
+```text title="Response"
+10
+```
+
+The value `10` indicates the balance of the token ID `256` for the specified address.
