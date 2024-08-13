@@ -65,9 +65,13 @@ impl ERC20Wallet {
 	pub fn deposit(&mut self, payload: Vec<u8>) -> Result<(Deposit, Vec<u8>), Box<dyn Error>> {
 		let args = abi::erc20::deposit(payload.clone())?;
 
-		let token_address = abi::extract::address(&args[0])?;
-		let wallet_address = abi::extract::address(&args[1])?;
-		let value = abi::extract::uint(&args[2])?;
+		let success = abi::extract::bool(&args[0])?;
+		if !success {
+			return Err("received failed deposit transaction".into());
+		}
+		let token_address = abi::extract::address(&args[1])?;
+		let wallet_address = abi::extract::address(&args[2])?;
+		let value = abi::extract::uint(&args[3])?;
 
 		debug!("new ERC20 deposit from {:?} with value {:?}", wallet_address, value);
 
