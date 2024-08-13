@@ -63,6 +63,10 @@ impl Rollup {
 		debug!("Setting app address to: {}", address);
 		self.app_address.write().await.replace(address);
 	}
+
+	pub async fn get_app_address(&self) -> Option<Address> {
+		self.app_address.read().await.clone()
+	}
 }
 
 impl RollupInternalEnvironment for Rollup {
@@ -126,7 +130,7 @@ impl EtherEnvironment for Rollup {
 	}
 
 	async fn ether_withdraw(&self, address: Address, value: Uint) -> Result<(), Box<dyn Error>> {
-		let app_address = self.app_address.read().await;
+		let app_address = self.get_app_address().await;
 		if app_address.is_none() {
 			return Err(Box::from("App address is not set"));
 		}
@@ -200,7 +204,7 @@ impl ERC721Environment for Rollup {
 		token_address: Address,
 		token_id: Uint,
 	) -> Result<(), Box<dyn Error>> {
-		let app_address = self.app_address.read().await;
+		let app_address = self.get_app_address().await;
 		if app_address.is_none() {
 			return Err(Box::from("App address is not set"));
 		}
@@ -251,7 +255,7 @@ impl ERC1155Environment for Rollup {
 	where
 		I: IntoIdsAmountsIter,
 	{
-		let app_address = self.app_address.read().await;
+		let app_address = self.get_app_address().await;
 		if app_address.is_none() {
 			return Err(Box::from("App address is not set"));
 		}
