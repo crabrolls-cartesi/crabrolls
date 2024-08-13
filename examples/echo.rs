@@ -59,8 +59,8 @@ mod tests {
 
 		let address = Address::default();
 
-		let payload = b"Hi Crabrolls!".to_vec();
-		let result = tester.advance(address, payload.clone()).await;
+		let payload = b"Hi Crabrolls!";
+		let result = tester.advance(address, payload).await;
 
 		assert!(result.is_accepted(), "Expected Accept status");
 
@@ -77,14 +77,14 @@ mod tests {
 			result.get_outputs(),
 			vec![
 				Output::Notice {
-					payload: payload.clone()
+					payload: payload.to_vec()
 				},
 				Output::Report {
-					payload: payload.clone()
+					payload: payload.to_vec()
 				},
 				Output::Voucher {
 					destination: address,
-					payload: payload.clone()
+					payload: payload.to_vec()
 				}
 			],
 			"Expected outputs to match"
