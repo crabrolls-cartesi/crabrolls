@@ -404,7 +404,7 @@ mod tests {
 		assert_eq!(
 			inspect_result.get_outputs(),
 			vec![Output::Report {
-				payload: amount.to_string().to_vec()
+				payload: amount.to_string().into()
 			}]
 		);
 	}
@@ -441,7 +441,7 @@ mod tests {
 		assert_eq!(
 			inspect_result.get_outputs(),
 			vec![Output::Report {
-				payload: amount.to_string().to_vec()
+				payload: amount.to_string().into()
 			}]
 		);
 	}
@@ -478,7 +478,7 @@ mod tests {
 		assert_eq!(
 			inspect_result.get_outputs(),
 			vec![Output::Report {
-				payload: address.to_vec()
+				payload: address.as_bytes().to_vec()
 			}]
 		);
 	}
@@ -517,7 +517,7 @@ mod tests {
 		assert_eq!(
 			inspect_result.get_outputs(),
 			vec![Output::Report {
-				payload: amount.to_string().to_vec()
+				payload: amount.to_string().into()
 			}]
 		);
 	}

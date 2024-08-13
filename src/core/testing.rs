@@ -413,10 +413,7 @@ where
 		}
 	}
 
-	pub async fn advance<T>(&self, sender: Address, payload: T) -> AdvanceResult
-	where
-		T: Into<Vec<u8>>,
-	{
+	pub async fn advance(&self, sender: Address, payload: impl AsRef<[u8]> + Send) -> AdvanceResult {
 		let metadata = Metadata {
 			input_index: self.env.get_input_index().await,
 			sender,
@@ -426,7 +423,7 @@ where
 
 		let (status, error) = match self
 			.app
-			.advance(&self.env, metadata.clone(), payload.into().as_ref(), None)
+			.advance(&self.env, metadata.clone(), payload.as_ref(), None)
 			.await
 		{
 			Ok(finish_status) => (finish_status, None),
@@ -444,8 +441,8 @@ where
 		}
 	}
 
-	pub async fn inspect(&self, payload: &[u8]) -> InspectResult {
-		let (status, error) = match self.app.inspect(&self.env, payload).await {
+	pub async fn inspect(&self, payload: impl AsRef<[u8]> + Send) -> InspectResult {
+		let (status, error) = match self.app.inspect(&self.env, payload.as_ref()).await {
 			Ok(finish_status) => (finish_status, None),
 			Err(e) => (FinishStatus::Reject, Some(e)),
 		};

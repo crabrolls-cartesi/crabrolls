@@ -308,6 +308,7 @@ pub mod abi {
 			value: Uint,
 		) -> Result<Vec<u8>, Box<dyn Error>> {
 			let tokens = vec![
+				Token::Bool(true),
 				Token::Address(token_address),
 				Token::Address(wallet_address),
 				Token::Uint(value),
