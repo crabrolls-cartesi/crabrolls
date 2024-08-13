@@ -185,26 +185,25 @@ impl Application for SuperHoneypotApp {
 					units::wei::to_ether(balance)
 				);
 
-				env.send_report(balance.to_string().as_bytes()).await?;
+				env.send_report(balance.to_string()).await?;
 			}
 			InspectBalance::ERC20 { address, token } => {
 				let balance = env.erc20_balance(address, token).await;
 				println!("Balance of ERC20 token {} for address {}: {}", token, address, balance);
 
-				env.send_report(balance.to_string().as_bytes()).await?;
+				env.send_report(balance.to_string()).await?;
 			}
 			InspectBalance::ERC721 { token, id } => {
 				let owner = env.erc721_owner_of(token, id).await;
 
 				if owner.is_none() {
 					println!("ERC721 token ID {} does not exist", id);
-					env.send_report("0".as_bytes()).await?;
+					env.send_report("0").await?;
 				} else {
 					println!("Owner of ERC721 token ID {}: {}", id, owner.unwrap());
 				}
 
-				env.send_report(owner.to_owned().unwrap_or(Address::zero()).as_bytes())
-					.await?;
+				env.send_report(owner.to_owned().unwrap_or(Address::zero())).await?;
 			}
 			InspectBalance::ERC1155 { address, token, id } => {
 				let balance = env.erc1155_balance(address, token, id).await;
@@ -213,7 +212,7 @@ impl Application for SuperHoneypotApp {
 					id, address, balance
 				);
 
-				env.send_report(balance.to_string().as_bytes()).await?;
+				env.send_report(balance.to_string()).await?;
 			}
 		}
 		Ok(FinishStatus::Accept)
@@ -399,13 +398,13 @@ mod tests {
 		})
 		.to_string();
 
-		let inspect_result = tester.inspect(inspect_payload.as_bytes()).await;
+		let inspect_result = tester.inspect(inspect_payload).await;
 
 		assert!(inspect_result.is_accepted(), "Expected Accept status");
 		assert_eq!(
 			inspect_result.get_outputs(),
 			vec![Output::Report {
-				payload: amount.to_string().as_bytes().to_vec()
+				payload: amount.to_string().to_vec()
 			}]
 		);
 	}
@@ -436,13 +435,13 @@ mod tests {
 		})
 		.to_string();
 
-		let inspect_result = tester.inspect(inspect_payload.as_bytes()).await;
+		let inspect_result = tester.inspect(inspect_payload).await;
 
 		assert!(inspect_result.is_accepted(), "Expected Accept status");
 		assert_eq!(
 			inspect_result.get_outputs(),
 			vec![Output::Report {
-				payload: amount.to_string().as_bytes().to_vec()
+				payload: amount.to_string().to_vec()
 			}]
 		);
 	}
@@ -473,13 +472,13 @@ mod tests {
 		})
 		.to_string();
 
-		let inspect_result = tester.inspect(inspect_payload.as_bytes()).await;
+		let inspect_result = tester.inspect(inspect_payload).await;
 
 		assert!(inspect_result.is_accepted(), "Expected Accept status");
 		assert_eq!(
 			inspect_result.get_outputs(),
 			vec![Output::Report {
-				payload: address.as_bytes().to_vec()
+				payload: address.to_vec()
 			}]
 		);
 	}
@@ -512,13 +511,13 @@ mod tests {
 		})
 		.to_string();
 
-		let inspect_result = tester.inspect(inspect_payload.as_bytes()).await;
+		let inspect_result = tester.inspect(inspect_payload).await;
 
 		assert!(inspect_result.is_accepted(), "Expected Accept status");
 		assert_eq!(
 			inspect_result.get_outputs(),
 			vec![Output::Report {
-				payload: amount.to_string().as_bytes().to_vec()
+				payload: amount.to_string().to_vec()
 			}]
 		);
 	}
