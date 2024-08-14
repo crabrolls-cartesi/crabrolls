@@ -15,8 +15,34 @@ pub mod abi {
 			arg.clone().into_uint().ok_or_else(|| "invalid type for Uint".into())
 		}
 
+		pub fn int(arg: &ethabi::Token) -> Result<Uint, Box<dyn Error>> {
+			arg.clone().into_int().ok_or_else(|| "invalid type for Int".into())
+		}
+
 		pub fn bool(arg: &ethabi::Token) -> Result<bool, Box<dyn Error>> {
 			arg.clone().into_bool().ok_or_else(|| "invalid type for bool".into())
+		}
+
+		pub fn string(arg: &ethabi::Token) -> Result<String, Box<dyn Error>> {
+			arg.clone()
+				.into_string()
+				.ok_or_else(|| "invalid type for string".into())
+		}
+
+		pub fn bytes(arg: &ethabi::Token) -> Result<Vec<u8>, Box<dyn Error>> {
+			arg.clone().into_bytes().ok_or_else(|| "invalid type for bytes".into())
+		}
+
+		pub fn array_of_address(arg: &ethabi::Token) -> Result<Vec<Address>, Box<dyn Error>> {
+			arg.clone()
+				.into_array()
+				.ok_or_else(|| "invalid type for array of Address".into())
+				.and_then(|array| {
+					array
+						.into_iter()
+						.map(|token| token.into_address().ok_or_else(|| "invalid type for Address".into()))
+						.collect::<Result<Vec<Address>, Box<dyn Error>>>()
+				})
 		}
 
 		pub fn array_of_uint(arg: &ethabi::Token) -> Result<Vec<Uint>, Box<dyn Error>> {
@@ -33,6 +59,18 @@ pub mod abi {
 								.map(Into::into)
 						})
 						.collect::<Result<Vec<Uint>, Box<dyn Error>>>()
+				})
+		}
+
+		pub fn array_of_bool(arg: &ethabi::Token) -> Result<Vec<bool>, Box<dyn Error>> {
+			arg.clone()
+				.into_array()
+				.ok_or_else(|| "invalid type for array of bool".into())
+				.and_then(|array| {
+					array
+						.into_iter()
+						.map(|token| token.into_bool().ok_or_else(|| "invalid type for bool".into()))
+						.collect::<Result<Vec<bool>, Box<dyn Error>>>()
 				})
 		}
 	}
