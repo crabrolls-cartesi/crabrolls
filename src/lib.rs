@@ -22,5 +22,5 @@ pub mod prelude {
 		testing::{AdvanceResult, InspectResult, ResultUtils},
 	};
 
-	pub use crate::utils::{abi, address_book::AddressBook, units};
+	pub use crate::utils::{abi::abi, address_book::AddressBook, units};
 }
