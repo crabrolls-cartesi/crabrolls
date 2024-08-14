@@ -103,7 +103,7 @@ impl Application for JsonApp {
 		payload: &[u8],
 		_deposit: Option<Deposit>,
 	) -> Result<FinishStatus, Box<dyn Error>> {
-		let input: Input = serde_json::from_slice(&payload)?;
+		let input: Input = serde_json::from_slice(payload)?;
 
 		let mut app = self.blog_app.write().await;
 		match input {
