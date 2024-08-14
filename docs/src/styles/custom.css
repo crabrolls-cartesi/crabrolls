@@ -13,6 +13,8 @@
 	--sl-color-gray-5: #353841;
 	--sl-color-gray-6: #24272f;
 	--sl-color-black: #17181c;
+	--sl-content-width: 58rem;
+	--sl-text-5xl: 3.5rem;
 }
 
 /* Light mode colors. */

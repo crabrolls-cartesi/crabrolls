@@ -2,7 +2,7 @@
 title: Unit Tests
 description: Guide on using the testing suite in CrabRolls.
 sidebar:
-    order: 0
+    order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
@@ -52,7 +52,7 @@ Unit testing is crucial for ensuring that your dApp behaves as expected before d
     let tester = Tester::new(app, MockupOptions::default());
     ```
 
-    By default the `MockupOptions` struct is used to configure the tester. You can customize the tester behavior by changing the options in the `MockupOptions` struct. The `MockupOptions` struct has the following fields:
+    By default the `MockupOptions` struct is used to configure the tester. You can customize the tester behavior by changing the options in the `MockupOptions` struct. The struct has the following fields:
 
     -   portal_config: The configuration of the portal used by the tester, a enum of PortalHandlerConfig with the options:
 
@@ -63,6 +63,8 @@ Unit testing is crucial for ensuring that your dApp behaves as expected before d
         Dispense,                 // Dispense the deposit and discard the advance input
     }
     ```
+
+    This will be used to configure the behavior of the tester when handling deposits, more about this in the [Wallet abstraction testing](#wallet-abstraction-testing) section.
 
 5.  **Prepare Input Payload:**
     Next, prepare the input payload for the application based on the test scenario.
@@ -75,13 +77,13 @@ Unit testing is crucial for ensuring that your dApp behaves as expected before d
     Use the tester to advance the state of your application with the prepared payload.
 
     ```rust
-    let result = tester.advance(Address::default(), payload).await;
+    let result: AdvanceResult = tester.advance(Address::default(), payload).await;
     ```
 
     You can also inspect the application state:
 
     ```rust
-    let result = tester.inspect(payload).await;
+    let result: InspectResult = tester.inspect(payload).await;
     ```
 
 7.  **Validate Test Results:**
