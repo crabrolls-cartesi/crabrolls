@@ -443,10 +443,6 @@ where
 		self.env.ether_addresses().await
 	}
 
-	pub async fn ether_withdraw(&self, address: Address, value: Uint) -> Result<(), Box<dyn Error>> {
-		self.env.ether_withdraw(address, value).await
-	}
-
 	pub async fn ether_transfer(
 		&self,
 		source: Address,
@@ -462,15 +458,6 @@ where
 
 	pub async fn erc20_addresses(&self) -> Vec<Address> {
 		self.env.erc20_addresses().await
-	}
-
-	pub async fn erc20_withdraw(
-		&self,
-		wallet_address: Address,
-		token_address: Address,
-		value: Uint,
-	) -> Result<(), Box<dyn Error>> {
-		self.env.erc20_withdraw(wallet_address, token_address, value).await
 	}
 
 	pub async fn erc20_transfer(
@@ -493,15 +480,6 @@ where
 		self.env.erc721_addresses().await
 	}
 
-	pub async fn erc721_withdraw(
-		&self,
-		wallet_address: Address,
-		token_address: Address,
-		token_id: Uint,
-	) -> Result<(), Box<dyn Error>> {
-		self.env.erc721_withdraw(wallet_address, token_address, token_id).await
-	}
-
 	pub async fn erc721_transfer(
 		&self,
 		src_wallet: Address,
@@ -520,21 +498,6 @@ where
 
 	pub async fn erc1155_addresses(&self) -> Vec<Address> {
 		self.env.erc1155_addresses().await
-	}
-
-	pub async fn erc1155_withdraw<I>(
-		&self,
-		wallet_address: Address,
-		token_address: Address,
-		withdrawals: I,
-		data: Option<Vec<u8>>,
-	) -> Result<(), Box<dyn Error>>
-	where
-		I: IntoIdsAmountsIter,
-	{
-		self.env
-			.erc1155_withdraw(wallet_address, token_address, withdrawals, data)
-			.await
 	}
 
 	pub async fn erc1155_transfer<I>(

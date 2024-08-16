@@ -133,8 +133,8 @@ pub trait ERC721Environment {
 	) -> impl Future<Output = Result<(), Box<dyn Error>>>;
 	fn erc721_transfer(
 		&self,
-		src_wallet: Address,
-		dst_wallet: Address,
+		source_wallet: Address,
+		destination_wallet: Address,
 		token_address: Address,
 		token_id: Uint,
 	) -> impl Future<Output = Result<(), Box<dyn Error>>>;
