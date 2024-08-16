@@ -1,0 +1,491 @@
+---
+title: Deposits
+description: Guide on handling deposits in your dApp using CrabRolls.
+sidebar:
+    order: 1
+---
+
+Cartesi provides a simple way to handle deposits in your dApp by using [Portals](https://docs.cartesi.io/cartesi-rollups/1.5/development/asset-handling/), which are a special type of smart contract that can hold funds and interact with the dApp. This guide will show you how to handle deposits in your dApp and manage the internal wallet abstraction using CrabRolls.
+
+## How it works
+
+Currently [Rollups APIs](https://docs.cartesi.io/cartesi-rollups/1.5/rollups-apis/) suport the following asset portals:
+
+-   [Ether](https://docs.cartesi.io/cartesi-rollups/1.5/rollups-apis/json-rpc/portals/EtherPortal/)
+-   [ERC20](https://docs.cartesi.io/cartesi-rollups/1.5/rollups-apis/json-rpc/portals/ERC20Portal/)
+-   [ERC721](https://docs.cartesi.io/cartesi-rollups/1.5/rollups-apis/json-rpc/portals/ERC721Portal/)
+-   [ERC1155 Single](https://docs.cartesi.io/cartesi-rollups/1.5/rollups-apis/json-rpc/portals/ERC1155SinglePortal/)
+-   [ERC1155 Batch](https://docs.cartesi.io/cartesi-rollups/1.5/rollups-apis/json-rpc/portals/ERC1155BatchPortal/)
+
+When a user deposits a asset on the respective portal, is triggered a new input from portal to dApp, which can be handled by the dApp by the `Advance` request on the [Backend API](https://docs.cartesi.io/cartesi-rollups/1.5/rollups-apis/backend/introduction/). Crabrolls provides a simple way to handle this input and manage the internal wallet abstraction and the dApp logic.
+
+## Handling deposits
+
+On creating a new dApp environment, CrabRolls will provide a `Option<Deposit>` parameter on the `Advance` request, which will be `Some` if a deposit was made on the respective portal. The `Deposit` enum contains the following variants:
+
+```rust "Ether" "ERC20" "ERC721" "ERC1155"
+enum Deposit {
+	Ether {
+		sender: Address,
+		amount: Uint,
+	},
+	ERC20 {
+		sender: Address,
+		token: Address,
+		amount: Uint,
+	},
+	ERC721 {
+		sender: Address,
+		token: Address,
+		id: Uint,
+	},
+	ERC1155 {
+		sender: Address,
+		token: Address,
+		ids_amounts: Vec<(Uint, Uint)>,
+	},
+}
+```
+
+The `Deposit` enum contains the sender address and the amount of the deposited asset. For ERC1155, the `ids_amounts` field contains a list of tuples with the id and amount of each asset deposited because ERC1155 allows multiple assets to be deposited in a single transaction (batch).
+
+### Example
+
+The following example shows how to handle deposits in your dApp using a simple `MyApp` struct that implements the `Application` trait, you can see more on [Environment and Application](../environment).
+
+```rust "Deposit::Ether" "Deposit::ERC20" "Deposit::ERC721" "Deposit::ERC1155"
+impl Application for MyApp {
+	async fn advance(
+		&self,
+		env: &impl Environment,
+		metadata: Metadata,
+		payload: &[u8],
+		deposit: Option<Deposit>,
+	) -> Result<FinishStatus, Box<dyn Error>> {
+		match deposit {
+			Some(Deposit::Ether { sender, amount }) => {
+				// Handle Ether deposit
+				println!("Ether deposit from {:?} with amount {:?}", sender, amount);
+			}
+			Some(Deposit::ERC20 { sender, token, amount }) => {
+				// Handle ERC20 deposit
+				println!("ERC20 deposit from {:?} with amount {:?} of token {:?}", sender, amount, token);
+			}
+			Some(Deposit::ERC721 { sender, token, id }) => {
+				// Handle ERC721 deposit
+				println!("ERC721 deposit from {:?} with id {:?} of token {:?}", sender, id, token);
+			}
+			Some(Deposit::ERC1155 { sender, token, ids_amounts }) => {
+				// Handle ERC1155 deposit
+				println!("ERC1155 deposit from {:?} with ids_amounts {:?} of token {:?}", sender, ids_amounts, token);
+			}
+			None => {
+				// Handle regular advance
+				println!("Regular advance without deposit");
+			}
+		}
+
+		Ok(FinishStatus::Accept)
+	}
+
+	... // Rest of your application implementation...
+}
+```
+
+Now you can handle deposits in your dApp and make you own business logic.
+
+## Wallet abstraction
+
+The `Environment` trait provides a simple way to manage the internal wallet abstraction using some functions based on which asset you want to manage.
+
+### Ether
+
+Available functions for Ether:
+
+```rust
+// Get all existing wallet addresses on the application.
+ether_addresses() -> Vec<Address>
+
+// Get the Ether balance of an address on the wallet application.
+ether_balance(wallet: Address) -> Uint
+
+// Withdraw Ether from wallet of address into the application.
+ether_withdraw(wallet: Address, amount: Uint) -> Result<(), Box<dyn Error>>
+
+// Transfer Ether from one wallet to another wallet on the application wallet.
+ether_transfer(source: Address, destination: Address, amount: Uint) -> Result<(), Box<dyn Error>>
+```
+
+#### Example
+
+The following example shows how to handle Ether deposits and divide half of the amount among all the addresses on the internal wallet and generate a voucher withdraw of the amount to the address.
+
+```rust "ether_addresses" "ether_balance" "ether_transfer" "ether_withdraw"
+impl Application for MyEtherApp {
+	async fn advance(
+		&self,
+		env: &impl Environment,
+		metadata: Metadata,
+		payload: &[u8],
+		deposit: Option<Deposit>,
+	) -> Result<FinishStatus, Box<dyn Error>> {
+		match deposit {
+			Some(Deposit::Ether { sender, amount }) => {
+				// Handle Ether deposit
+				println!("Ether deposit from {:?} with amount {:?}", sender, amount);
+
+				// Get balance of the sender.
+				let balance = env.ether_balance(sender).await;
+				println!("Balance of {:?} is {:?}", sender, balance);
+
+				// Get all existing wallet addresses on the application.
+				// Every address on the internal wallet with a balance>0.
+				let addresses = env.ether_addresses().await;
+
+				// Divide the deposit amount equally among all the addresses half of the amount.
+				let amount_per_address = (amount / 2) / addresses.len() as u128;
+
+				// Transfer the amount to each address and withdraw the amount to the address.
+				for address in addresses {
+					env.ether_transfer(sender, address, amount_per_address).await?;
+
+					// Get the balance of the address.
+					let balance = env.ether_balance(address).await;
+					println!("New balance of {:?} is {:?}", address, balance);
+
+					// Withdraw the amount from the address.
+					env.ether_withdraw(address, amount_per_address).await?;
+				}
+			}
+			_ => {
+				unimplemented!();
+			}
+		}
+
+		Ok(FinishStatus::Accept)
+	}
+
+	... // Rest of your application implementation...
+}
+```
+
+### ERC20
+
+Available functions for ERC20:
+
+```rust
+// Get all existing wallet addresses on the application.
+erc20_addresses() -> Vec<Address>
+
+// Get the ERC20 balance of an address on the wallet application.
+erc20_balance(wallet: Address, token: Address) -> Uint
+
+// Withdraw ERC20 from wallet of address into the application.
+erc20_withdraw(wallet: Address, token: Address, amount: Uint) -> Result<(), Box<dyn Error>>
+
+// Transfer ERC20 from one wallet to another wallet on the application wallet.
+erc20_transfer(source: Address, destination: Address, token: Address, amount: Uint) -> Result<(), Box<dyn Error>>
+```
+
+#### Example
+
+In this example we will show how to handle ERC20 deposits and send the amount to the address with the highest balance.
+
+```rust "erc20_addresses" "erc20_balance" "erc20_transfer" "erc20_withdraw"
+impl Application for MyERC20App {
+	async fn advance(
+		&self,
+		env: &impl Environment,
+		metadata: Metadata,
+		payload: &[u8],
+		deposit: Option<Deposit>,
+	) -> Result<FinishStatus, Box<dyn Error>> {
+		const THRESHOLD: u128 = 01092003;
+
+		match deposit {
+			Some(Deposit::ERC20 { sender, token, amount }) => {
+				// Handle ERC20 deposit
+				println!(
+					"ERC20 deposit from {:?} with amount {:?} of token {:?}",
+					sender, amount, token
+				);
+
+				// Get balance of the sender.
+				let balance = env.erc20_balance(sender, token).await;
+				println!("Balance of {:?} is {:?}", sender, balance);
+
+				// Get all existing wallet addresses on the application.
+				// Every address on the internal wallet with a balance>0.
+				let addresses = env.erc20_addresses().await;
+
+				// Make a future for each address to get the balance of the address.
+				let futures = addresses.iter().map(|address| async {
+					let balance = env.erc20_balance(*address, token).await;
+					(*address, balance)
+				});
+
+				// Join all the futures to get the address with the highest balance.
+				let results = futures::future::join_all(futures).await;
+
+				// Get the address with the highest balance.
+				let (max_address, max_balance) = results.into_iter().max_by_key(|&(_, balance)| balance).expect("No addresses found");
+				println!(
+					"Address with max balance is {:?} with balance {:?}",
+					max_address, max_balance
+				);
+
+				// Transfer the ERC20 token to the address with the highest balance.
+				env.erc20_transfer(sender, max_address, token, amount).await?;
+
+				// Get the new balance of the sender.
+				let new_balance = env.erc20_balance(sender, token).await;
+				println!("New balance of {:?} is {:?}", sender, new_balance);
+
+				if new_balance > THRESHOLD.into() {
+					// Withdraw the ERC20 token from the sender.
+					env.erc20_withdraw(sender, token, new_balance).await?;
+				}
+			}
+			_ => {
+				unimplemented!();
+			}
+		}
+
+		Ok(FinishStatus::Accept)
+	}
+
+	... // Rest of your application implementation...
+}
+```
+
+### ERC721
+
+Available functions for ERC721:
+
+```rust
+// Get all existing wallet addresses on the application.
+erc721_addresses() -> Vec<Address>
+
+// Get the ERC721 owner of a token on the wallet application.
+erc721_owner_of(token: Address, id: Uint) -> Option<Address>
+
+// Withdraw ERC721 from wallet of address into the application.
+erc721_withdraw(wallet: Address, token: Address, id: Uint) -> Result<(), Box<dyn Error>>
+
+// Transfer ERC721 from one wallet to another wallet on the application wallet.
+erc721_transfer(source: Address, destination: Address, token: Address, id: Uint) -> Result<(), Box<dyn Error>>
+```
+
+#### Example
+
+In this example we will show how to handle ERC721 deposits and transfer the token to a predefined address based on the token id(odd or even).
+
+```rust "erc721_addresses" "erc721_owner_of" "erc721_transfer" "erc721_withdraw"
+impl Application for MyERC721App {
+	async fn advance(
+		&self,
+		env: &impl Environment,
+		metadata: Metadata,
+		payload: &[u8],
+		deposit: Option<Deposit>,
+	) -> Result<FinishStatus, Box<dyn Error>> {
+		let odd_address = address!("0x1234567890abcdef1234567890abcdef12345678");
+		let even_address = address!("0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef");
+		match deposit {
+			Some(Deposit::ERC721 { sender, token, id }) => {
+				// Handle ERC721 deposit
+				println!("ERC721 deposit from {:?} with id {:?} of token {:?}", sender, id, token);
+
+				// Check if token id is even or odd and transfer it to a target address accordingly.
+				let target_address = if id.as_u64() % 2 == 0 {
+					// Predefined address for even token IDs
+					odd_address
+				} else {
+					// Another predefined address
+					even_address
+				};
+
+				// Check if target address is on addresses list.
+				let addresses = env.erc721_addresses().await;
+				if !addresses.contains(&target_address) {
+					panic!("Target address not found in wallet addresses list");
+				}
+
+				// Transfer the ERC721 token to the target address.
+				env.erc721_transfer(sender, target_address, token, id).await?;
+				println!("Token {:?} transferred from {:?} to {:?}", id, sender, target_address);
+
+				// Get the owner of the token.
+				let owner = env.erc721_owner_of(token, id).await;
+				println!("Owner of token {:?} is {:?}", id, owner); // Should be target_address
+
+				// Withdraw the token back to target address
+				env.erc721_withdraw(target_address, token, id).await?;
+				println!("Token {:?} withdrawn from {:?}", id, sender);
+			}
+			_ => {
+				unimplemented!();
+			}
+		}
+
+		Ok(FinishStatus::Accept)
+	}
+	... // Rest of your application implementation...
+}
+```
+
+### ERC1155
+
+Available functions for ERC1155:
+
+```rust
+// Get all existing wallet addresses on the application.
+erc1155_addresses() -> Vec<Address>
+
+// Get the ERC1155 balance of an address on the wallet application.
+erc1155_balance(wallet: Address, token: Address, id: Uint) -> Uint
+
+// Withdraw ERC1155 tokens from wallet of address into the application. withdrawals is a vector of (id, amount) tuples.
+// data is an optional field that can be used to pass additional information to the withdrawal function on-chain.
+erc1155_withdraw(wallet: Address, token: Address, withdrawals: Vec<(Uint, Uint)>, data: Option<Vec<u8>>) -> Result<(), Box<dyn Error>>
+
+// Transfer ERC1155 tokens from one wallet to another wallet on the application wallet. transfers is a vector of (id, amount) tuples.
+erc1155_transfer(source: Address, destination: Address, token: Address, transfers: Vec<(Uint, Uint)>) -> Result<(), Box<dyn Error>>
+```
+
+#### Example
+
+In this example we will show how to handle ERC1155 deposits and transfer the tokens to the addresses with the lowest balance and withdraw a portion of the tokens from each address.
+
+```rust "erc1155_addresses" "erc1155_balance" "erc1155_transfer" "erc1155_withdraw"
+impl Application for MyERC1155App {
+	async fn advance(
+		&self,
+		env: &impl Environment,
+		metadata: Metadata,
+		payload: &[u8],
+		deposit: Option<Deposit>,
+	) -> Result<FinishStatus, Box<dyn Error>> {
+		match deposit {
+			Some(Deposit::ERC1155 {
+				sender,
+				token,
+				ids_amounts,
+			}) => {
+				// Handle ERC1155 deposit
+				println!(
+					"ERC1155 deposit from {:?} with ids_amounts {:?} of token {:?}",
+					sender, ids_amounts, token
+				);
+
+				// Get all existing wallet addresses on the application.
+				let addresses = env.erc1155_addresses().await;
+
+				// For each id, get the balance for all addresses
+				for (id, _) in &ids_amounts {
+					let mut address_balances = vec![];
+
+					// Fetch the balance of the ERC1155 token for each address
+					for address in &addresses {
+						let balance = env.erc1155_balance(*address, token, *id).await;
+						address_balances.push((*address, balance));
+					}
+
+					// Find addresses with the lowest balance for this token ID
+					address_balances.sort_by_key(|&(_, balance)| balance);
+					let low_balance_addresses: Vec<Address> = address_balances
+						.iter()
+						.take(3) // Take top 3 addresses with the lowest balance
+						.map(|&(address, _)| address)
+						.collect();
+
+					// Calculate the amount to distribute
+					let total_amount = ids_amounts
+						.iter()
+						.find(|&&(item_id, _)| item_id == *id)
+						.map(|&(_, amount)| amount)
+						.unwrap_or(0.into());
+					let amount_per_address = total_amount / low_balance_addresses.len() as u128;
+
+					// Transfer tokens to addresses with the lowest balance
+					for address in low_balance_addresses.clone() {
+						if amount_per_address > 0.into() {
+							env.erc1155_transfer(sender, address, token, vec![(*id, amount_per_address)])
+								.await?;
+							println!(
+								"Transferred {} of token ID {:?} to address {:?}",
+								amount_per_address, id, address
+							);
+						}
+					}
+
+					// Withdraw a portion of the tokens from each address
+					let withdraw_amount = amount_per_address / 2; // Example: withdraw half of what was transferred
+					for address in low_balance_addresses {
+						if withdraw_amount > 0.into() {
+							env.erc1155_withdraw(address, token, vec![(*id, withdraw_amount)], None)
+								.await?;
+							println!(
+								"Withdrawn {} of token ID {:?} from address {:?}",
+								withdraw_amount, id, address
+							);
+						}
+					}
+				}
+			}
+			_ => {
+				unimplemented!();
+			}
+		}
+
+		Ok(FinishStatus::Accept)
+	}
+
+	... // Rest of your application implementation...
+}
+```
+
+## Portal handling configuration
+
+On running your dApp, you can configure the portal handling by setting the `PortalHandlerConfig` on the `RunOptions` struct. The `PortalHandlerConfig` enum contains the following variants:
+
+```rust
+enum PortalHandlerConfig {
+	Handle { advance: bool }, // Handle the portals and pass the payload/deposit to the app if advance is true
+	Ignore,                   // Ignore the deposit handle and pass the payload to the app
+	Dispense,                 // Dispense the deposit and discard the advance input
+}
+```
+
+> Default value is `PortalHandlerConfig::Handle{ advance: true }`.
+
+So, you can set the `PortalHandlerConfig` on the `RunOptions` struct to configure the portal handling like:
+
+```rust
+
+use crabrolls::prelude::*;
+
+... //Your application implementation...
+
+#[async_std::main] // Use the async_std::main attribute to run the async main function
+async fn main() {
+	let app = MyApp::new(); // Create a new instance of your application
+	let options = RunOptions::builder() // Create a new instance of the RunOptionsBuilder struct
+		.portal_config(PortalHandlerConfig::Ignore) // Set the portal handling configuration
+		.build(); // Build the RunOptions struct
+	if let Err(e) = Supervisor::run(app, options).await { // Run the application
+		eprintln!("Error: {}", e); // Handle any errors that occur during execution
+	}
+}
+```
+
+Use-case examples:
+
+-   `PortalHandlerConfig::Handle { advance: true }`: Handle the portals and pass the payload/deposit/ to the app.
+    -   This is the default value. The deposit will be evaluated by the app and the dApp logic of store the information on the internal wallet is executed, and the payload/deposit is passed to the app `advance` method.
+-   `PortalHandlerConfig::Handle { advance: false }`: Handle the portals and not pass the payload/deposit to the app.
+    -   The deposit will be evaluated by the app and the dApp logic of store the information on the internal wallet is executed, but the payload/deposit is not passed to the app `advance`, so the app will not be able to handle the deposit using the `Deposit` parameter.
+-   `PortalHandlerConfig::Ignore`: Ignore the deposit handle and pass the payload to the app.
+    -   The deposit will be ignored by the app and the dApp logic of store the information on the internal wallet is not executed, but the payload/deposit is passed to the app `advance` method in raw form(like a regular advance, only on the payload, without the `Deposit` parameter parsing).
+-   `PortalHandlerConfig::Dispense`: Dispense the deposit and discard the advance input.
+    -   The deposit will be ignored by the app and the dApp logic of store the information on the internal wallet is not executed, and the payload/deposit is not passed to the app `advance` method. Commonly used when deposits are not part of the dApp business logic or wallet management.

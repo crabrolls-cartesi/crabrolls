@@ -299,9 +299,6 @@ ether_addresses() -> Vec<Address>
 // Get the Ether balance of an address on the wallet application.
 ether_balance(wallet: Address) -> Uint
 
-// Withdraw Ether from wallet of address into the application.
-ether_withdraw(wallet: Address, amount: Uint) -> Result<(), Box<dyn Error>>
-
 // Transfer Ether from one wallet to another wallet on the application wallet.
 ether_transfer(source: Address, destination: Address, amount: Uint) -> Result<(), Box<dyn Error>>
 ```
@@ -363,9 +360,6 @@ erc20_addresses() -> Vec<Address>
 
 // Get the ERC20 balance of an address on the wallet application.
 erc20_balance(wallet: Address, token: Address) -> Uint
-
-// Withdraw ERC20 tokens from wallet of address into the application.
-erc20_withdraw(wallet: Address, token: Address, amount: Uint) -> Result<(), Box<dyn Error>>
 
 // Transfer ERC20 tokens from one wallet to another wallet on the application wallet.
 erc20_transfer(source: Address, destination: Address, token: Address, amount: Uint) -> Result<(), Box<dyn Error>>
@@ -430,9 +424,6 @@ ERC721 wallet abstraction has the following methods from the `Tester` utility:
 ```rust
 // Get all existing wallet addresses on the application.
 erc721_addresses() -> Vec<Address>
-
-// Withdraw ERC721 tokens from wallet of address into the application.
-erc721_withdraw(wallet: Address, token: Address, id: Uint) -> Result<(), Box<dyn Error>>
 
 // Transfer ERC721 tokens from one wallet to another wallet on the application wallet.
 erc721_transfer(source: Address, destination: Address, token: Address, id: Uint) -> Result<(), Box<dyn Error>>
@@ -504,9 +495,6 @@ erc1155_addresses() -> Vec<Address>
 
 // Get the ERC1155 balance of an address on the wallet application.
 erc1155_balance(wallet: Address, token: Address, id: Uint) -> Uint
-
-// Withdraw ERC1155 tokens from wallet of address into the application. withdrawals is a vector of (id, amount) tuples.
-erc1155_withdraw(wallet: Address, token: Address, withdrawals: Vec<(Uint, Uint)>) -> Result<(), Box<dyn Error>>
 
 // Transfer ERC1155 tokens from one wallet to another wallet on the application wallet. transfers is a vector of (id, amount) tuples.
 erc1155_transfer(source: Address, destination: Address, token: Address, transfers: Vec<(Uint, Uint)>) -> Result<(), Box<dyn Error>>
