@@ -10,14 +10,15 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/check": "^0.8.1",
-    "@astrojs/starlight": "^0.25.1",
-    "@expressive-code/plugin-line-numbers": "^0.35.3",
-    "astro": "^4.11.5",
-    "astro-expressive-code": "^0.35.3",
-    "sharp": "^0.33.4",
-    "starlight-image-zoom": "^0.6.0",
-    "starlight-links-validator": "^0.9.1",
-    "typescript": "^5.5.3"
+    "@astrojs/check": "0.9.2",
+    "@astrojs/starlight": "0.25.4",
+    "@expressive-code/plugin-line-numbers": "0.35.6",
+    "astro": "4.13.3",
+    "astro-expressive-code": "0.35.6",
+    "sharp": "0.33.4",
+    "starlight-image-zoom": "0.7.0",
+    "starlight-links-validator": "0.10.1",
+    "starlight-view-modes": "^0.6.0",
+    "typescript": "5.5.4"
   }
 }

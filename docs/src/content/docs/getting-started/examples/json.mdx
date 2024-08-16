@@ -1,15 +1,15 @@
 ---
-title: JSON Blog Application
+title: JSON Blog
 description: A simple blog application that manages posts using JSON-based inputs.
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-<Aside>See the [New Project or Example](../../new-project) guide to learn how to run the examples or how to start a new project.</Aside>
+<Aside>See the [New Project or Example](../new-project) guide to learn how to run the examples or how to start a new project.</Aside>
 
 ## Overview
 
-The JSON Blog application is a straightforward implementation that demonstrates how to manage blog posts using JSON-based inputs in the Crabrolls framework. It allows you to add, update, and delete posts. This document outlines how to use the JSON Blog application, including sending inputs and inspecting outputs. You can find the source code of the Echo application in the [CrabRolls repository](https://github.com/crabrolls-cartesi/crabrolls/blob/main/examples/blog.rs).
+The JSON Blog application is a straightforward implementation that demonstrates how to manage blog posts using JSON-based inputs in the Crabrolls framework. It allows you to add, update, and delete posts. This document outlines how to use the JSON Blog application, including sending inputs and inspecting outputs. You can find the source code in the [CrabRolls repository](https://github.com/crabrolls-cartesi/crabrolls/blob/main/examples/blog.rs).
 
 ## Usage
 
@@ -118,10 +118,10 @@ Which will return response like this:
 }
 ```
 
-Now you can see the posts stored in the application by decoding the payload of the report using the command:
+Now you can see the posts stored in the application by decoding the payload of the report using the command [cast](https://book.getfoundry.sh/cast/) from `foundry`:
 
 ```bash title="Terminal" /0x[0-9a-fA-F]{2,}/
-echo "0x5b7b226964223a312c227469746c65223a2241206e657720706f7374222c22636f6e74656e74223a224d7920636f6e74656e74206f662074686520706f737421227d5d" | xxd -r -p | jq
+cast to-ascii 0x5b7b226964223a312c227469746c65223a2241206e657720706f7374222c22636f6e74656e74223a224d7920636f6e74656e74206f662074686520706f737421227d5d | jq
 ```
 
 This will return the posts stored in the application:
@@ -174,7 +174,7 @@ Now you can see the last notices of the application, including the changes made 
 Decoding the payload of the notice will return the changes made to the state:
 
 ```bash title="Terminal" /0x[0-9a-fA-F]{2,}/
-echo "0x22416464656420706f73743a2041206e657720706f737422" | xxd -r -p
+cast to-ascii 0x22416464656420706f73743a2041206e657720706f737422
 ```
 
 This will return the changes made to the state:

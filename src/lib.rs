@@ -10,15 +10,18 @@ use core::{application::Application, environment::Environment};
 use types::machine::{FinishStatus, Metadata};
 
 pub mod prelude {
-    pub use crate::core::{
-        application::Application,
-        context::{run, RunOptions},
-        environment::Environment,
-        testing::Tester,
-    };
+	pub use crate::core::{
+		application::Application,
+		context::{RunOptions, Supervisor},
+		environment::Environment,
+		testing::{MockupOptions, Tester},
+	};
 
-    pub use crate::types::{
-        address::Address,
-        machine::{Deposit, FinishStatus, Metadata, Output},
-    };
+	pub use crate::types::{
+		address_book::AddressBook,
+		machine::{Deposit, FinishStatus, Metadata, Output, PortalHandlerConfig},
+		testing::{AdvanceResult, InspectResult, ResultUtils},
+	};
+
+	pub use crate::utils::{abi::abi, macros::*, units};
 }

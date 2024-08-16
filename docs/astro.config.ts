@@ -2,7 +2,7 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import starlightLinksValidator from 'starlight-links-validator';
 import starlightImageZoom from 'starlight-image-zoom';
-import { pluginLineNumbers } from '@expressive-code/plugin-line-numbers';
+import starlightViewModes from 'starlight-view-modes';
 
 // https://astro.build/config
 export default defineConfig({
@@ -15,7 +15,7 @@ export default defineConfig({
 				github: 'https://github.com/crabrolls-cartesi/crabrolls',
 			},
 			editLink: {
-				baseUrl: 'https://github.com/crabrolls-cartesi/crabrolls/tree/main',
+				baseUrl: 'https://github.com/crabrolls-cartesi/crabrolls/tree/main/docs',
 			},
 			logo: {
 				src: './src/assets/logo.png',
@@ -35,9 +35,9 @@ export default defineConfig({
 					},
 				},
 				{
-					label: 'Advanced',
+					label: 'Usage',
 					autogenerate: {
-						directory: 'advanced',
+						directory: 'usage',
 					},
 				},
 			],
@@ -47,13 +47,8 @@ export default defineConfig({
 					errorOnRelativeLinks: false,
 				}),
 				starlightImageZoom(),
+				starlightViewModes(),
 			],
-			expressiveCode: {
-				plugins: [pluginLineNumbers()],
-				defaultProps: {
-					showLineNumbers: false,
-				},
-			},
 		}),
 	],
 });
