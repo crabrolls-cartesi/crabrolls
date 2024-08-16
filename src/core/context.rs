@@ -3,8 +3,8 @@ use super::{application::Application, environment::RollupInternalEnvironment};
 use crate::types::machine::{Advance, Inspect};
 use crate::{
 	prelude::Deposit,
+	types::address_book::AddressBook,
 	types::machine::{FinishStatus, Input, PortalHandlerConfig},
-	utils::address_book::AddressBook,
 };
 use ethabi::Address;
 use std::error::Error;
@@ -123,13 +123,6 @@ pub async fn handle_portals<R: RollupInternalEnvironment>(
 	}
 }
 
-pub fn is_portal<R: RollupInternalEnvironment>(rollup: &R, sender: Address) -> bool {
-	sender == rollup.get_address_book().ether_portal
-		|| sender == rollup.get_address_book().erc20_portal
-		|| sender == rollup.get_address_book().erc721_portal
-		|| sender == rollup.get_address_book().erc1155_single_portal
-		|| sender == rollup.get_address_book().erc1155_batch_portal
-}
 pub struct Supervisor;
 
 impl Supervisor {
@@ -179,7 +172,7 @@ impl Supervisor {
 
 		if let PortalHandlerConfig::Handle { .. } = options.portal_config {
 			deposit = handle_portals(rollup, advance_input.metadata.sender, advance_input.payload.clone()).await?;
-		} else if is_portal(rollup, advance_input.metadata.sender)
+		} else if rollup.get_address_book().is_portal(advance_input.metadata.sender)
 			&& options.portal_config == PortalHandlerConfig::Dispense
 		{
 			debug!("Dispensing the deposit and discarding the advance input");

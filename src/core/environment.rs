@@ -2,8 +2,8 @@ use super::contracts::erc1155::{ERC1155Environment, ERC1155Wallet, IntoIdsAmount
 use super::contracts::erc20::{ERC20Environment, ERC20Wallet};
 use super::contracts::erc721::{ERC721Environment, ERC721Wallet};
 use super::contracts::ether::{EtherEnvironment, EtherWallet};
+use crate::types::address_book::AddressBook;
 use crate::types::machine::{Advance, FinishStatus, Input, Inspect, Output};
-use crate::utils::address_book::AddressBook;
 use crate::utils::requests::ClientWrapper;
 use async_std::sync::RwLock;
 use ethabi::{Address, Uint};

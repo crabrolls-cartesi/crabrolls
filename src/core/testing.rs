@@ -5,10 +5,10 @@ use std::{error::Error, sync::Arc, time::UNIX_EPOCH};
 use crate::{
 	address,
 	types::{
+		address_book::AddressBook,
 		machine::{Deposit, FinishStatus, Output, PortalHandlerConfig},
 		testing::{AdvanceResult, InspectResult},
 	},
-	utils::address_book::AddressBook,
 	Application, Environment, Metadata,
 };
 
@@ -338,22 +338,7 @@ where
 	}
 
 	pub async fn deposit(&self, deposit: Deposit) -> AdvanceResult {
-		let sender = match deposit.clone() {
-			Deposit::Ether { .. } => self.env.address_book.ether_portal,
-			Deposit::ERC20 { .. } => self.env.address_book.erc20_portal,
-			Deposit::ERC721 { .. } => self.env.address_book.erc721_portal,
-			Deposit::ERC1155 {
-				ids_amounts,
-				sender: _,
-				token: _,
-			} => {
-				if ids_amounts.len() == 1 {
-					self.env.address_book.erc1155_single_portal
-				} else {
-					self.env.address_book.erc1155_batch_portal
-				}
-			}
-		};
+		let sender = self.env.address_book.address_from_deposit(deposit.clone());
 
 		let metadata = Metadata {
 			input_index: self.env.get_input_index().await,

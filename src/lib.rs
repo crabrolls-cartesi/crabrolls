@@ -18,9 +18,10 @@ pub mod prelude {
 	};
 
 	pub use crate::types::{
+		address_book::AddressBook,
 		machine::{Deposit, FinishStatus, Metadata, Output, PortalHandlerConfig},
 		testing::{AdvanceResult, InspectResult, ResultUtils},
 	};
 
-	pub use crate::utils::{abi::abi, address_book::AddressBook, units};
+	pub use crate::utils::{abi::abi, units};
 }
