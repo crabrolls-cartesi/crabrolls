@@ -178,3 +178,43 @@ impl Application for MyApp {
     ... // Rest of the implementation
 }
 ```
+
+## Running the Application
+
+To run the application, you can use the `Supervisor` struct provided by CrabRolls. This struct allows you to run your application and specify the options for the execution.
+
+```rust
+use crabrolls::prelude::*;
+
+... //Your application implementation...
+
+#[async_std::main] // Use the async_std::main attribute to run the async main function
+async fn main() {
+	let app = MyApp::new(); // Create a new instance of your application
+	let options = RunOptions::default(); // Create a new instance of the RunOptions struct
+	if let Err(e) = Supervisor::run(app, options).await { // Run the application
+		eprintln!("Error: {}", e); // Handle any errors that occur during execution
+	}
+}
+```
+
+The `RunOptions` struct allows you to specify the options for the execution of your application. You can set the `rollup_url`, `address_book`, and `portal_config` to customize the execution environment. The `Supervisor` struct will run your application using the specified options. For example:
+
+```rust
+use crabrolls::prelude::*;
+
+... //Your application implementation...
+
+#[async_std::main] // Use the async_std::main attribute to run the async main function
+async fn main() {
+	let app = MyApp::new(); // Create a new instance of your application
+	let options = RunOptions::builder() // Create a new instance of the RunOptionsBuilder struct
+		.rollup_url("http://localhost:8080/host-runner") // Set the rollup URL to `cartesi run --no-backend` mode
+		.build(); // Create a new instance of the RunOptions struct with custom options
+	if let Err(e) = Supervisor::run(app, options).await { // Run the application
+		eprintln!("Error: {}", e); // Handle any errors that occur during execution
+	}
+}
+```
+
+Now you have a basic understanding of how to set up an environment for developing and running your dApp using CrabRolls 🎉!
