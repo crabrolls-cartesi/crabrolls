@@ -100,7 +100,7 @@ impl TryFrom<Deposit> for Vec<u8> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PortalHandlerConfig {
-	Handle { advance: bool }, // Handle the portals and pass the payload to the app if advance is true
+	Handle { advance: bool }, // Handle the portals and pass the payload/deposit to the app if advance is true
 	Ignore,                   // Ignore the deposit handle and pass the payload to the app
 	Dispense,                 // Dispense the deposit and discard the advance input
 }
