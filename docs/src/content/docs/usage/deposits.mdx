@@ -5,6 +5,8 @@ sidebar:
     order: 1
 ---
 
+import { Aside } from '@astrojs/starlight/components';
+
 Cartesi provides a simple way to handle deposits in your dApp by using [Portals](https://docs.cartesi.io/cartesi-rollups/1.5/development/asset-handling/), which are a special type of smart contract that can hold funds and interact with the dApp. This guide will show you how to handle deposits in your dApp and manage the internal wallet abstraction using CrabRolls.
 
 ## How it works
@@ -18,6 +20,13 @@ Currently [Rollups APIs](https://docs.cartesi.io/cartesi-rollups/1.5/rollups-api
 -   [ERC1155 Batch](https://docs.cartesi.io/cartesi-rollups/1.5/rollups-apis/json-rpc/portals/ERC1155BatchPortal/)
 
 When a user deposits a asset on the respective portal, is triggered a new input from portal to dApp, which can be handled by the dApp by the `Advance` request on the [Backend API](https://docs.cartesi.io/cartesi-rollups/1.5/rollups-apis/backend/introduction/). Crabrolls provides a simple way to handle this input and manage the internal wallet abstraction and the dApp logic.
+
+<Aside>
+	Before sending any `withdraw` request to vouchers, you must ensure that the dApp recognizes him-self address, because the vouchers of the withdraws are sent to the dApp address. Using the [Cartesi
+	CLI](https://github.com/cartesi/cli) you can send the dApp address from command `cartesi send dapp-address`, but you can use the
+	[DAppAddressRelay](https://docs.cartesi.io/cartesi-rollups/1.5/rollups-apis/json-rpc/relays/) contract, calling the function `relayDAppAddress(address _dapp)`(You can get the contract address
+	using the command `cartesi address-book`).
+</Aside>
 
 ## Handling deposits
 
