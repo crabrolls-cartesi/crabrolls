@@ -60,10 +60,37 @@ Current we have a template to create a new project or example using CrabRolls, a
     prompt-1     | GraphQL running at http://localhost:8080/graphql
     prompt-1     | Inspect running at http://localhost:8080/inspect/
     prompt-1     | Explorer running at http://localhost:8080/explorer/
+    prompt-1     | Bundler running at http://localhost:8080/bundler/rpc
+    prompt-1     | Paymaster running at http://localhost:8080/paymaster/
     prompt-1     | Press Ctrl+C to stop the node
     ```
 
     Now you can test the [Examples](#using-examples) or create your own project based on the template!
+
+</Steps>
+
+## From scratch
+
+If you want to create a new project or example from scratch, you can follow the steps below:
+
+<Steps>
+
+1.  Create a new cargo project:
+
+    ```bash title="Terminal"
+    cargo new my_project
+    ```
+
+2.  Add the CrabRolls dependencies to your `Cargo.toml` file:
+
+        ```toml title="Cargo.toml"
+        [dependencies]
+        async-std = "1.12.0" # Current used async runtime(compatible with cartesi machine)
+        crabrolls = "2.0.0" # Latest version of CrabRolls
+        ethabi = "18.0.0" # Base ethereum abi/primitive types library used by CrabRolls
+        ```
+
+3.  Follow the [Environment setup](../../usage/environment) guide to set up your environment and how to use the [Cartesi CLI](https://www.npmjs.com/package/@cartesi/cli) to run the application.
 
 </Steps>
 

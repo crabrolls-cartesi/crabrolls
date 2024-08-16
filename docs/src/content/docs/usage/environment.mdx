@@ -217,4 +217,35 @@ async fn main() {
 }
 ```
 
+To use the [Cartesi CLI](https://github.com/cartesi/cli) to run the application, you can follow the steps below:
+
+<Steps>
+1.  Build the project:
+
+    ```bash title="Terminal"
+    cartesi build
+    ```
+
+2.  Run the project:
+
+    ```bash title="Terminal"
+    cartesi run
+    ```
+
+    The terminal will show the output of the application like:
+
+    ```bash title="Terminal"
+    prompt-1     | Anvil running at http://localhost:8545
+    prompt-1     | GraphQL running at http://localhost:8080/graphql
+    prompt-1     | Inspect running at http://localhost:8080/inspect/
+    prompt-1     | Explorer running at http://localhost:8080/explorer/
+    prompt-1     | Bundler running at http://localhost:8080/bundler/rpc
+    prompt-1     | Paymaster running at http://localhost:8080/paymaster/
+    prompt-1     | Press Ctrl+C to stop the node
+    ```
+
+3.  You can use your application!
+
+</Steps>
+
 Now you have a basic understanding of how to set up an environment for developing and running your dApp using CrabRolls 🎉!
