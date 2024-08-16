@@ -242,6 +242,7 @@ pub trait ERC1155Environment {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate::uint;
 
 	#[test]
 	fn test_addresses() {
@@ -249,8 +250,8 @@ mod tests {
 		let address1 = Address::from_low_u64_be(1);
 		let address2 = Address::from_low_u64_be(2);
 		let token_address = Address::from_low_u64_be(3);
-		let token_id = Uint::from(1);
-		let amount = Uint::from(100);
+		let token_id = uint!(1);
+		let amount = uint!(100);
 
 		wallet.set_balance(address1, token_address, token_id, amount);
 		wallet.set_balance(address2, token_address, token_id, amount);
@@ -266,8 +267,8 @@ mod tests {
 		let mut wallet = ERC1155Wallet::new();
 		let owner = Address::from_low_u64_be(1);
 		let token_address = Address::from_low_u64_be(2);
-		let token_id = Uint::from(1);
-		let amount = Uint::from(100);
+		let token_id = uint!(1);
+		let amount = uint!(100);
 
 		wallet.set_balance(owner, token_address, token_id, amount);
 		assert_eq!(wallet.balance_of(owner, token_address, token_id), amount);
@@ -282,12 +283,12 @@ mod tests {
 		let src_wallet = Address::from_low_u64_be(1);
 		let dst_wallet = Address::from_low_u64_be(2);
 		let token_address = Address::from_low_u64_be(3);
-		let token_id = Uint::from(1);
-		let amount = Uint::from(100);
+		let token_id = uint!(1);
+		let amount = uint!(100);
 
 		wallet.set_balance(src_wallet, token_address, token_id, amount);
 
-		let transfer_amount = Uint::from(50);
+		let transfer_amount = uint!(50);
 		assert!(wallet
 			.transfer(src_wallet, dst_wallet, token_address, vec![(token_id, transfer_amount)])
 			.is_ok());
@@ -299,7 +300,7 @@ mod tests {
 				src_wallet,
 				dst_wallet,
 				token_address,
-				vec![(token_id, transfer_amount + Uint::from(1))]
+				vec![(token_id, transfer_amount + uint!(1))]
 			)
 			.is_err());
 	}
@@ -309,8 +310,8 @@ mod tests {
 		let mut wallet = ERC1155Wallet::new();
 		let token_address = Address::from_low_u64_be(1);
 		let wallet_address = Address::from_low_u64_be(2);
-		let token_id = Uint::from(1);
-		let amount = Uint::from(100);
+		let token_id = uint!(1);
+		let amount = uint!(100);
 
 		let payload =
 			ERC1155Wallet::deposit_payload(wallet_address, token_address, (token_id, amount)).expect("deposit payload");
@@ -323,7 +324,7 @@ mod tests {
 		let mut wallet = ERC1155Wallet::new();
 		let token_address = Address::from_low_u64_be(1);
 		let wallet_address = Address::from_low_u64_be(2);
-		let deposits = vec![(Uint::from(1), Uint::from(50)), (Uint::from(2), Uint::from(100))];
+		let deposits = vec![(uint!(1), uint!(50)), (uint!(2), uint!(100))];
 
 		let payload = ERC1155Wallet::deposit_payload(wallet_address, token_address, deposits.clone())
 			.expect("batch deposit payload");
@@ -340,12 +341,12 @@ mod tests {
 		let dapp_address = Address::from_low_u64_be(1);
 		let wallet_address = Address::from_low_u64_be(2);
 		let token_address = Address::from_low_u64_be(3);
-		let token_id = Uint::from(1);
-		let amount = Uint::from(100);
+		let token_id = uint!(1);
+		let amount = uint!(100);
 
 		wallet.set_balance(wallet_address, token_address, token_id, amount);
 
-		let withdraw_amount = Uint::from(50);
+		let withdraw_amount = uint!(50);
 
 		assert!(wallet
 			.withdraw(
@@ -366,7 +367,7 @@ mod tests {
 				dapp_address,
 				wallet_address,
 				token_address,
-				(token_id, withdraw_amount + Uint::from(1)),
+				(token_id, withdraw_amount + uint!(1)),
 				None
 			)
 			.is_err());
@@ -378,10 +379,10 @@ mod tests {
 		let dapp_address = Address::from_low_u64_be(1);
 		let wallet_address = Address::from_low_u64_be(2);
 		let token_address = Address::from_low_u64_be(3);
-		let withdrawals = vec![(Uint::from(1), Uint::from(50)), (Uint::from(2), Uint::from(100))];
+		let withdrawals = vec![(uint!(1), uint!(50)), (uint!(2), uint!(100))];
 
-		wallet.set_balance(wallet_address, token_address, Uint::from(1), Uint::from(100));
-		wallet.set_balance(wallet_address, token_address, Uint::from(2), Uint::from(200));
+		wallet.set_balance(wallet_address, token_address, uint!(1), uint!(100));
+		wallet.set_balance(wallet_address, token_address, uint!(2), uint!(200));
 
 		assert!(wallet
 			.withdraw(dapp_address, wallet_address, token_address, withdrawals.clone(), None)
@@ -391,7 +392,7 @@ mod tests {
 			assert_eq!(wallet.balance_of(wallet_address, token_address, token_id), amount);
 		}
 
-		let failing_withdrawals = vec![(Uint::from(1), Uint::from(100)), (Uint::from(2), Uint::from(200))];
+		let failing_withdrawals = vec![(uint!(1), uint!(100)), (uint!(2), uint!(200))];
 		assert!(wallet
 			.withdraw(dapp_address, wallet_address, token_address, failing_withdrawals, None)
 			.is_err());

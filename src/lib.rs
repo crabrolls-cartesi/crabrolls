@@ -23,5 +23,5 @@ pub mod prelude {
 		testing::{AdvanceResult, InspectResult, ResultUtils},
 	};
 
-	pub use crate::utils::{abi::abi, units};
+	pub use crate::utils::{abi::abi, macros::*, units};
 }

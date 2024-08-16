@@ -1,4 +1,4 @@
-use ethabi::Address;
+use ethabi::{Address, Uint};
 
 #[macro_export]
 macro_rules! address {
@@ -6,6 +6,16 @@ macro_rules! address {
 		(|| -> Address { $address.parse().expect("Invalid address format") })()
 	};
 }
+
+#[macro_export]
+macro_rules! uint {
+	($value:expr) => {
+		(|| -> Uint { Uint::from($value) })()
+	};
+}
+
+pub use address;
+pub use uint;
 
 #[cfg(test)]
 mod tests {
@@ -22,5 +32,12 @@ mod tests {
 				0xb9, 0x22, 0x66
 			])
 		);
+	}
+
+	#[test]
+	fn test_uint_macro() {
+		let value = uint!(100);
+
+		assert_eq!(value, Uint::from(100u64));
 	}
 }

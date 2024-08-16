@@ -271,7 +271,7 @@ mod tests {
 
 		let address = Address::default();
 		let token_address = Address::from_low_u64_be(1);
-		let amount = Uint::from(1000u64);
+		let amount = uint!(1000u64);
 
 		let deposit_result = tester
 			.deposit(Deposit::ERC20 {
@@ -306,7 +306,7 @@ mod tests {
 
 		let address = Address::default();
 		let token_address = Address::from_low_u64_be(1);
-		let token_id = Uint::from(1u64);
+		let token_id = uint!(1u64);
 
 		let deposit_result = tester
 			.deposit(Deposit::ERC721 {
@@ -341,8 +341,8 @@ mod tests {
 
 		let address = Address::default();
 		let token_address = Address::from_low_u64_be(1);
-		let token_id = Uint::from(1u64);
-		let amount = Uint::from(10u64);
+		let token_id = uint!(1u64);
+		let amount = uint!(10u64);
 
 		let deposit_result = tester
 			.deposit(Deposit::ERC1155 {
@@ -416,7 +416,7 @@ mod tests {
 
 		let address = Address::default();
 		let token_address = Address::from_low_u64_be(1);
-		let amount = Uint::from(1000u64);
+		let amount = uint!(1000u64);
 
 		tester
 			.deposit(Deposit::ERC20 {
@@ -453,7 +453,7 @@ mod tests {
 
 		let address = Address::default();
 		let token_address = Address::from_low_u64_be(1);
-		let token_id = Uint::from(1u64);
+		let token_id = uint!(1u64);
 
 		tester
 			.deposit(Deposit::ERC721 {
@@ -490,8 +490,8 @@ mod tests {
 
 		let address = Address::default();
 		let token_address = Address::from_low_u64_be(1);
-		let token_id = Uint::from(1u64);
-		let amount = Uint::from(10u64);
+		let token_id = uint!(1u64);
+		let amount = uint!(10u64);
 
 		tester
 			.deposit(Deposit::ERC1155 {

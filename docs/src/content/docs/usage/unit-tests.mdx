@@ -2,7 +2,7 @@
 title: Unit Tests
 description: Guide on using the testing suite in CrabRolls.
 sidebar:
-    order: 3
+    order: 2
 ---
 
 import { Steps, Aside } from '@astrojs/starlight/components';
@@ -381,7 +381,7 @@ async fn test_erc20() {
 
     let address = Address::default();
     let token_address = Address::from_low_u64_be(1);
-    let amount = Uint::from(1000u64);
+    let amount = uint!(1000u64);
 
     // Deposit ERC20 tokens
     let deposit_result = tester
@@ -451,7 +451,7 @@ async fn test_erc721() {
 
     let address = Address::default();
     let token_address = Address::from_low_u64_be(1);
-    let token_id = Uint::from(1u64);
+    let token_id = uint!(1u64);
 
     // Deposit ERC721 token
     let deposit_result = tester
@@ -522,8 +522,8 @@ async fn test_erc1155() {
 
     let address = Address::default();
     let token_address = Address::from_low_u64_be(1);
-    let token_id = Uint::from(1u64);
-    let amount = Uint::from(10u64);
+    let token_id = uint!(1u64);
+    let amount = uint!(10u64);
 
     // Deposit ERC1155 tokens
     let deposit_result = tester

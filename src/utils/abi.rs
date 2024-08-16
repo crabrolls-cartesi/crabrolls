@@ -632,13 +632,13 @@ pub mod abi {
 #[cfg(test)]
 mod tests {
 	use super::abi;
-	use crate::address;
+	use crate::{address, uint};
 	use ethabi::{Address, Token, Uint};
 
 	#[test]
 	fn test_ether_withdraw() {
 		let address = address!("0x1234567890123456789012345678901234567890");
-		let value = Uint::from(100);
+		let value = uint!(100);
 
 		let encoded = abi::ether::withdraw(address, value).expect("encoding failed");
 		let expected = hex::decode("522f681500000000000000000000000012345678901234567890123456789012345678900000000000000000000000000000000000000000000000000000000000000064").expect("decoding failed");
@@ -664,7 +664,7 @@ mod tests {
 		}
 
 		if let Token::Uint(value) = &tokens[1] {
-			assert_eq!(value, &Uint::from(100));
+			assert_eq!(value, &uint!(100));
 		} else {
 			panic!("invalid token type");
 		}
@@ -733,7 +733,7 @@ mod tests {
 
 		let function_name = "transfer";
 		let address = address!("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
-		let value = Uint::from(1000);
+		let value = uint!(1000);
 		let params = vec![Token::Address(address), Token::Uint(value)];
 
 		let encoded = abi::encode::function_call(abi_json, function_name, params).expect("encoding failed");

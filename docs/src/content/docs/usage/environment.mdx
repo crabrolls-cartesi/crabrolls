@@ -7,7 +7,7 @@ sidebar:
 
 import { Steps, Aside } from '@astrojs/starlight/components';
 
-Creating a application environment is essential for developing and testing your applications(dApps) on [Cartesi Machine](https://docs.cartesi.io/cartesi-machine/). This guide will demonstrate how to set up an environment using CrabRolls, along with example code to get you started.
+Creating a application environment is the first step for developing and testing your applications(dApps) on [Cartesi Machine](https://docs.cartesi.io/cartesi-machine/) using this HLF. This guide will demonstrate how to set up an environment using CrabRolls, along with example code to get you started.
 
 ## Setting Up an Application Environment
 
@@ -137,8 +137,8 @@ To send notices, reports, and vouchers, you can use the `Environment` trait prov
         }
     ]"#;
 
-    let value = Uint::from(144);
-    let params = vec![Token::Uint(Uint::from(value))];
+    let value = uint!(144);
+    let params = vec![Token::Uint(uint!(value))];
 
     let voucher_payload = abi::encode::function_call(abi_json, "testFunction", params)?;
     let contract_address = address!("0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef");

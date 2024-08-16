@@ -2,7 +2,7 @@
 title: Utils and Macros
 description: Learn about the utils and macros provided by CrabRolls.
 sidebar:
-    order: 1
+    order: 3
 ---
 
 Currently, CrabRolls internally uses some self-defined macros and utilities to help you with the development of your dApp and the interactions. This page will show you all of them and how to use them.
@@ -56,7 +56,7 @@ The `extract` sub-module provides helper functions to extract specific types fro
     use ethabi::Token;
     use crabrolls::prelude::*;
 
-    let token = Token::Uint(ethabi::Uint::from(100u32));
+    let token = Token::Uint(uint!(100u32));
     let extracted_uint = abi::extract::uint(&token).expect("Failed to extract uint");
     ```
 
@@ -70,7 +70,7 @@ The `extract` sub-module provides helper functions to extract specific types fro
     use ethabi::Token;
     use crabrolls::prelude::*;
 
-    let token = Token::Int(ethabi::Uint::from(100i32));
+    let token = Token::Int(uint!(100i32));
     let extracted_int = abi::extract::int(&token).expect("Failed to extract int");
     ```
 
@@ -145,8 +145,8 @@ The `extract` sub-module provides helper functions to extract specific types fro
     use crabrolls::prelude::*;
 
     let uints = vec![
-        Token::Uint(ethabi::Uint::from(100u32)),
-        Token::Uint(ethabi::Uint::from(200u32)),
+        Token::Uint(uint!(100u32)),
+        Token::Uint(uint!(200u32)),
     ];
     let token = Token::Array(uints);
     let extracted_uints = abi::extract::array_of_uint(&token).expect("Failed to extract array of uints");
@@ -200,7 +200,7 @@ The `utils` sub-module provides utility functions related to the size calculatio
 
     let tokens = vec![
         Token::Address(address!("0x1234567890123456789012345678901234567890")),
-        Token::Uint(ethabi::Uint::from(100u32)),
+        Token::Uint(uint!(100u32)),
     ];
     let total_size = abi::utils::size_of_packed_tokens(&tokens);
     println!("Total size of packed tokens: {} bytes", total_size);
@@ -246,7 +246,7 @@ The `encode` sub-module provides functions to encode data into ABI format.
 
     let function_name = "transfer";
     let address = address!("0x1234567890123456789012345678901234567890");
-    let value = Uint::from(1000u32);
+    let value = uint!(1000u32);
     let params = vec![Token::Address(address), Token::Uint(value)];
 
     let encoded_data = abi::encode::function_call(abi_json, function_name, params).expect("Failed to encode function call");
@@ -264,7 +264,7 @@ The `encode` sub-module provides functions to encode data into ABI format.
 
     let tokens = vec![
         Token::Address(address!("0x1234567890123456789012345678901234567890")),
-        Token::Uint(ethabi::Uint::from(1000u32)),
+        Token::Uint(uint!(1000u32)),
     ];
 
     let encoded_data = abi::encode::abi(&tokens).expect("Failed to encode tokens");
@@ -282,7 +282,7 @@ The `encode` sub-module provides functions to encode data into ABI format.
 
     let tokens = vec![
         Token::Address(address!("0x1234567890123456789012345678901234567890")),
-        Token::Uint(Uint::from(1000u32)),
+        Token::Uint(uint!(1000u32)),
     ];
 
     let packed_data = abi::encode::pack(&tokens).expect("Failed to pack tokens");
@@ -357,7 +357,7 @@ The `ether` sub-module provides functions specific to handling Ether (the native
     use crabrolls::prelude::*;
 
     let address = address!("0x1234567890123456789012345678901234567890");
-    let value = Uint::from(100u32);
+    let value = uint!(100u32);
 
     let payload = ether::deposit_payload(address, value).expect("Failed to encode Ether deposit payload");
     ```
@@ -373,7 +373,7 @@ The `ether` sub-module provides functions specific to handling Ether (the native
     use crabrolls::prelude::*;
 
     let address = address!("0x1234567890123456789012345678901234567890");
-    let value = Uint::from(100u32);
+    let value = uint!(100u32);
 
     let function_call = ether::withdraw(address, value).expect("Failed to encode Ether withdrawal function call");
     ```
@@ -409,7 +409,7 @@ The `erc20` sub-module provides functions specific to handling ERC-20 token depo
 
     let wallet_address = address!("0x1234567890123456789012345678901234567890");
     let token_address = address!("0x0987654321098765432109876543210987654321");
-    let value = Uint::from(1000u32);
+    let value = uint!(1000u32);
 
     let payload = erc20::deposit_payload(wallet_address, token_address, value).expect("Failed to encode ERC-20 deposit payload");
     ```
@@ -425,7 +425,7 @@ The `erc20` sub-module provides functions specific to handling ERC-20 token depo
     use crabrolls::prelude::*;
 
     let address = address!("0x1234567890123456789012345678901234567890");
-    let value = Uint::from(1000u32);
+    let value = uint!(1000u32);
 
     let function_call = erc20::withdraw(address, value).expect("Failed to encode ERC-20 withdrawal function call");
     ```
@@ -461,7 +461,7 @@ The `erc721` sub-module provides functions specific to handling ERC-721 token de
 
     let wallet_address = address!("0x1234567890123456789012345678901234567890");
     let token_address = address!("0x0987654321098765432109876543210987654321");
-    let token_id = Uint::from(12345u32);
+    let token_id = uint!(12345u32);
 
     let payload = erc721::deposit_payload(wallet_address, token_address, token_id).expect("Failed to encode ERC-721 deposit payload");
     ```
@@ -478,7 +478,7 @@ The `erc721` sub-module provides functions specific to handling ERC-721 token de
 
     let dapp_address = address!("0xDAppAddress123456789012345678901234567890");
     let address = address!("0x1234567890123456789012345678901234567890");
-    let token_id = Uint::from(12345u32);
+    let token_id = uint!(12345u32);
 
     let function_call = erc721::withdraw(dapp_address, address, token_id).expect("Failed to encode ERC-721 withdrawal function call");
     ```
@@ -527,8 +527,8 @@ The `erc1155` sub-module provides functions specific to handling ERC-1155 token 
 
     let wallet_address = address!("0x1234567890123456789012345678901234567890");
     let token_address = address!("0x0987654321098765432109876543210987654321");
-    let token_id = Uint::from(12345u32);
-    let amount = Uint::from(10u32);
+    let token_id = uint!(12345u32);
+    let amount = uint!(10u32);
 
     let payload = erc1155::single_deposit_payload(wallet_address, token_address, token_id, amount).expect("Failed to encode single ERC-1155 deposit payload");
     ```
@@ -546,8 +546,8 @@ The `erc1155` sub-module provides functions specific to handling ERC-1155 token 
     let wallet_address = address!("0x1234567890123456789012345678901234567890");
     let token_address = address!("0x0987654321098765432109876543210987654321");
     let ids_amounts = vec![
-        (Uint::from(12345u32), Uint::from(10u32)),
-        (Uint::from(67890u32), Uint::from(20u32)),
+        (uint!(12345u32), uint!(10u32)),
+        (uint!(67890u32), uint!(20u32)),
     ];
 
     let payload = erc1155::batch_deposit_payload(wallet_address, token_address, ids_amounts).expect("Failed to encode batch ERC-1155 deposit payload");
@@ -565,8 +565,8 @@ The `erc1155` sub-module provides functions specific to handling ERC-1155 token 
 
     let dapp_address = address!("0xDAppAddress123456789012345678901234567890");
     let address = address!("0x1234567890123456789012345678901234567890");
-    let token_id = Uint::from(12345u32);
-    let amount = Uint::from(10u32);
+    let token_id = uint!(12345u32);
+    let amount = uint!(10u32);
     let data = vec![];
 
     let function_call = erc1155::single_withdraw(dapp_address, address, token_id, amount, data).expect("Failed to encode single ERC-1155 withdrawal function call");
@@ -585,8 +585,8 @@ The `erc1155` sub-module provides functions specific to handling ERC-1155 token 
     let dapp_address = address!("0xDAppAddress123456789012345678901234567890");
     let address = address!("0x1234567890123456789012345678901234567890");
     let withdrawals = vec![
-        (Uint::from(12345u32), Uint::from(10u32)),
-        (Uint::from(67890u32), Uint::from(20u32)),
+        (uint!(12345u32), uint!(10u32)),
+        (uint!(67890u32), uint!(20u32)),
     ];
     let data = vec![];
 
@@ -615,7 +615,7 @@ The module is further organized into several sub-modules, each serving specific 
     use ethabi::Uint;
     use crabrolls::prelude::*;
 
-    let wei_value = Uint::from(1_000_000_000_000_000_000u64); // 1 Ether
+    let wei_value = uint!(1_000_000_000_000_000_000u64); // 1 Ether
     let ether_value = wei::to_ether(wei_value);
     println!("Ether value: {}", ether_value); // Output: 1.0
     ```
@@ -645,7 +645,7 @@ The module is further organized into several sub-modules, each serving specific 
     use ethabi::Uint;
     use crabrolls::prelude::*;
 
-    let wei_value = Uint::from(1_000_000_000u64); // 1 Gwei
+    let wei_value = uint!(1_000_000_000u64); // 1 Gwei
     let gwei_value = wei::to_gwei(wei_value);
     println!("Gwei value: {}", gwei_value); // Output: 1.0
     ```
@@ -681,4 +681,18 @@ use ethabi::Address;
 
 // Equivalent to Address::from_str("0x1234567890123456789012345678901234567890").unwrap()
 let address = address!("0x1234567890123456789012345678901234567890");
+```
+
+### `uint`
+
+The `uint!` macro simplifies the creation of an Ethereum `Uint` type from a numeric literal.
+
+**Usage Example:**
+
+```rust
+use crabrolls::prelude::*;
+use ethabi::Uint;
+
+// Equivalent to Uint::from(100u32)
+let uint = uint!(100u32);
 ```

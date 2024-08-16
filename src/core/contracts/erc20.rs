@@ -139,7 +139,7 @@ pub trait ERC20Environment {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::address;
+	use crate::{address, uint};
 
 	#[test]
 	fn test_erc20_wallet_initialization() {
@@ -153,8 +153,8 @@ mod tests {
 		let wallet_address = address!("0x0000000000000000000000000000000000000001");
 		let token_address = address!("0x0000000000000000000000000000000000000002");
 
-		wallet.set_balance(wallet_address, token_address, Uint::from(100u64));
-		assert_eq!(wallet.balance_of(wallet_address, token_address), Uint::from(100u64));
+		wallet.set_balance(wallet_address, token_address, uint!(100u64));
+		assert_eq!(wallet.balance_of(wallet_address, token_address), uint!(100u64));
 
 		wallet.set_balance(wallet_address, token_address, Uint::zero());
 		assert_eq!(wallet.balance_of(wallet_address, token_address), Uint::zero());
@@ -167,13 +167,13 @@ mod tests {
 		let dst_wallet = address!("0x0000000000000000000000000000000000000002");
 		let token_address = address!("0x0000000000000000000000000000000000000003");
 
-		wallet.set_balance(src_wallet, token_address, Uint::from(100u64));
-		wallet.set_balance(dst_wallet, token_address, Uint::from(50u64));
+		wallet.set_balance(src_wallet, token_address, uint!(100u64));
+		wallet.set_balance(dst_wallet, token_address, uint!(50u64));
 
-		let result = wallet.transfer(src_wallet, dst_wallet, token_address, Uint::from(30u64));
+		let result = wallet.transfer(src_wallet, dst_wallet, token_address, uint!(30u64));
 		assert!(result.is_ok());
-		assert_eq!(wallet.balance_of(src_wallet, token_address), Uint::from(70u64));
-		assert_eq!(wallet.balance_of(dst_wallet, token_address), Uint::from(80u64));
+		assert_eq!(wallet.balance_of(src_wallet, token_address), uint!(70u64));
+		assert_eq!(wallet.balance_of(dst_wallet, token_address), uint!(80u64));
 	}
 
 	#[test]
@@ -183,10 +183,10 @@ mod tests {
 		let dst_wallet = address!("0x0000000000000000000000000000000000000002");
 		let token_address = address!("0x0000000000000000000000000000000000000003");
 
-		wallet.set_balance(src_wallet, token_address, Uint::from(10u64));
-		wallet.set_balance(dst_wallet, token_address, Uint::from(50u64));
+		wallet.set_balance(src_wallet, token_address, uint!(10u64));
+		wallet.set_balance(dst_wallet, token_address, uint!(50u64));
 
-		let result = wallet.transfer(src_wallet, dst_wallet, token_address, Uint::from(20u64));
+		let result = wallet.transfer(src_wallet, dst_wallet, token_address, uint!(20u64));
 		assert_eq!(result.unwrap_err().to_string(), "insufficient funds");
 	}
 
@@ -196,9 +196,9 @@ mod tests {
 		let wallet_address = address!("0x0000000000000000000000000000000000000001");
 		let token_address = address!("0x0000000000000000000000000000000000000002");
 
-		wallet.set_balance(wallet_address, token_address, Uint::from(100u64));
+		wallet.set_balance(wallet_address, token_address, uint!(100u64));
 
-		let result = wallet.transfer(wallet_address, wallet_address, token_address, Uint::from(10u64));
+		let result = wallet.transfer(wallet_address, wallet_address, token_address, uint!(10u64));
 		assert_eq!(result.unwrap_err().to_string(), "can't transfer to self");
 	}
 
@@ -207,7 +207,7 @@ mod tests {
 		let mut wallet = ERC20Wallet::new();
 		let wallet_address = address!("0x0000000000000000000000000000000000000001");
 		let token_address = address!("0x0000000000000000000000000000000000000002");
-		let value = Uint::from(1_000_000_000_000_000_000u64);
+		let value = uint!(1_000_000_000_000_000_000u64);
 
 		let payload = ERC20Wallet::deposit_payload(wallet_address, token_address, value)
 			.expect("deposit payload creation failed");
@@ -237,12 +237,12 @@ mod tests {
 		let wallet_address = address!("0x0000000000000000000000000000000000000001");
 		let token_address = address!("0x0000000000000000000000000000000000000002");
 
-		wallet.set_balance(wallet_address, token_address, Uint::from(100u64));
+		wallet.set_balance(wallet_address, token_address, uint!(100u64));
 
-		let result = wallet.withdraw(wallet_address, token_address, Uint::from(50u64));
+		let result = wallet.withdraw(wallet_address, token_address, uint!(50u64));
 
 		assert!(result.is_ok());
-		assert_eq!(wallet.balance_of(wallet_address, token_address), Uint::from(50u64));
+		assert_eq!(wallet.balance_of(wallet_address, token_address), uint!(50u64));
 	}
 
 	#[test]
@@ -251,9 +251,9 @@ mod tests {
 		let wallet_address = address!("0x0000000000000000000000000000000000000001");
 		let token_address = address!("0x0000000000000000000000000000000000000002");
 
-		wallet.set_balance(wallet_address, token_address, Uint::from(10u64));
+		wallet.set_balance(wallet_address, token_address, uint!(10u64));
 
-		let result = wallet.withdraw(wallet_address, token_address, Uint::from(50u64));
+		let result = wallet.withdraw(wallet_address, token_address, uint!(50u64));
 		assert_eq!(result.unwrap_err().to_string(), "insufficient funds");
 	}
 }

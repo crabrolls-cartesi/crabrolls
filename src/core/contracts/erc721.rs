@@ -144,7 +144,7 @@ pub trait ERC721Environment {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::address;
+	use crate::{address, uint};
 
 	#[test]
 	fn test_erc721_wallet_initialization() {
@@ -158,11 +158,11 @@ mod tests {
 		let wallet_address = address!("0x0000000000000000000000000000000000000001");
 		let token_address = address!("0x0000000000000000000000000000000000000002");
 
-		wallet.add_token(wallet_address, token_address, Uint::from(1));
-		assert_eq!(wallet.owner_of(token_address, Uint::from(1)), Some(wallet_address));
+		wallet.add_token(wallet_address, token_address, uint!(1));
+		assert_eq!(wallet.owner_of(token_address, uint!(1)), Some(wallet_address));
 
-		wallet.remove_token(wallet_address, token_address, Uint::from(1));
-		assert_eq!(wallet.owner_of(token_address, Uint::from(1)), None);
+		wallet.remove_token(wallet_address, token_address, uint!(1));
+		assert_eq!(wallet.owner_of(token_address, uint!(1)), None);
 	}
 
 	#[test]
@@ -172,10 +172,10 @@ mod tests {
 		let dst_wallet = address!("0x0000000000000000000000000000000000000002");
 		let token_address = address!("0x0000000000000000000000000000000000000003");
 
-		wallet.add_token(src_wallet, token_address, Uint::from(1));
-		let result = wallet.transfer(src_wallet, dst_wallet, token_address, Uint::from(1));
+		wallet.add_token(src_wallet, token_address, uint!(1));
+		let result = wallet.transfer(src_wallet, dst_wallet, token_address, uint!(1));
 		assert!(result.is_ok());
-		assert_eq!(wallet.owner_of(token_address, Uint::from(1)), Some(dst_wallet));
+		assert_eq!(wallet.owner_of(token_address, uint!(1)), Some(dst_wallet));
 	}
 
 	#[test]
@@ -184,8 +184,8 @@ mod tests {
 		let wallet_address = address!("0x0000000000000000000000000000000000000001");
 		let token_address = address!("0x0000000000000000000000000000000000000002");
 
-		wallet.add_token(wallet_address, token_address, Uint::from(1));
-		let result = wallet.transfer(wallet_address, wallet_address, token_address, Uint::from(1));
+		wallet.add_token(wallet_address, token_address, uint!(1));
+		let result = wallet.transfer(wallet_address, wallet_address, token_address, uint!(1));
 		assert_eq!(result.unwrap_err().to_string(), "can't transfer to self");
 	}
 
@@ -195,7 +195,7 @@ mod tests {
 		let wallet_address = address!("0x0000000000000000000000000000000000000001");
 		let token_address = address!("0x0000000000000000000000000000000000000002");
 
-		let token_id = Uint::from(Uint::from(1));
+		let token_id = uint!(uint!(1));
 		let mut token_id_bytes = [0u8; 32];
 		token_id.to_big_endian(&mut token_id_bytes);
 
@@ -217,12 +217,12 @@ mod tests {
 		{
 			assert_eq!(sender, wallet_address);
 			assert_eq!(token, token_address);
-			assert_eq!(token_id, Uint::from(1));
+			assert_eq!(token_id, uint!(1));
 		} else {
 			panic!("invalid deposit type");
 		}
 
-		assert_eq!(wallet.owner_of(token_address, Uint::from(1)), Some(wallet_address));
+		assert_eq!(wallet.owner_of(token_address, uint!(1)), Some(wallet_address));
 		assert!(remaining_payload.is_empty());
 	}
 
@@ -233,10 +233,10 @@ mod tests {
 		let token_address = address!("0x0000000000000000000000000000000000000002");
 		let dapp_address = address!("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
 
-		wallet.add_token(wallet_address, token_address, Uint::from(1));
-		let result = wallet.withdraw(dapp_address, wallet_address, token_address, Uint::from(1));
+		wallet.add_token(wallet_address, token_address, uint!(1));
+		let result = wallet.withdraw(dapp_address, wallet_address, token_address, uint!(1));
 		assert!(result.is_ok());
-		assert_eq!(wallet.owner_of(token_address, Uint::from(1)), None);
+		assert_eq!(wallet.owner_of(token_address, uint!(1)), None);
 	}
 
 	#[test]
@@ -246,7 +246,7 @@ mod tests {
 		let token_address = address!("0x0000000000000000000000000000000000000002");
 		let dapp_address = address!("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
 
-		let result = wallet.withdraw(dapp_address, wallet_address, token_address, Uint::from(1));
+		let result = wallet.withdraw(dapp_address, wallet_address, token_address, uint!(1));
 		assert_eq!(result.unwrap_err().to_string(), "token not owned");
 	}
 }

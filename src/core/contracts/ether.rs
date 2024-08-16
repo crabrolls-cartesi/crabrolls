@@ -103,12 +103,12 @@ pub trait EtherEnvironment {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::address;
+	use crate::{address, uint};
 
 	#[test]
 	fn test_ether_deposit_creation() {
 		let address = address!("0x0000000000000000000000000000000000000001");
-		let value = Uint::from(1_000_000_000_000_000_000u64);
+		let value = uint!(1_000_000_000_000_000_000u64);
 		let deposit = Deposit::Ether {
 			sender: address,
 			amount: value,
@@ -125,7 +125,7 @@ mod tests {
 	#[test]
 	fn test_value_in_ether() {
 		let address = address!("0x0000000000000000000000000000000000000001");
-		let value = Uint::from(1_000_000_000_000_000_000u64);
+		let value = uint!(1_000_000_000_000_000_000u64);
 		let deposit = Deposit::Ether {
 			sender: address,
 			amount: value,
@@ -151,8 +151,8 @@ mod tests {
 		let addr1 = address!("0x0000000000000000000000000000000000000001");
 		let addr2 = address!("0x0000000000000000000000000000000000000002");
 
-		wallet.set_balance(addr2, Uint::from(10u64));
-		wallet.set_balance(addr1, Uint::from(5u64));
+		wallet.set_balance(addr2, uint!(10u64));
+		wallet.set_balance(addr1, uint!(5u64));
 
 		let addresses = wallet.addresses();
 		assert_eq!(addresses, vec![addr1, addr2]);
@@ -163,8 +163,8 @@ mod tests {
 		let mut wallet = EtherWallet::new();
 		let address = address!("0x0000000000000000000000000000000000000001");
 
-		wallet.set_balance(address, Uint::from(100u64));
-		assert_eq!(wallet.balance_of(address), Uint::from(100u64));
+		wallet.set_balance(address, uint!(100u64));
+		assert_eq!(wallet.balance_of(address), uint!(100u64));
 
 		wallet.set_balance(address, Uint::zero());
 		assert_eq!(wallet.balance_of(address), Uint::zero());
@@ -176,13 +176,13 @@ mod tests {
 		let src = address!("0x0000000000000000000000000000000000000001");
 		let dst = address!("0x0000000000000000000000000000000000000002");
 
-		wallet.set_balance(src, Uint::from(100u64));
-		wallet.set_balance(dst, Uint::from(50u64));
+		wallet.set_balance(src, uint!(100u64));
+		wallet.set_balance(dst, uint!(50u64));
 
-		let result = wallet.transfer(src, dst, Uint::from(30u64));
+		let result = wallet.transfer(src, dst, uint!(30u64));
 		assert!(result.is_ok());
-		assert_eq!(wallet.balance_of(src), Uint::from(70u64));
-		assert_eq!(wallet.balance_of(dst), Uint::from(80u64));
+		assert_eq!(wallet.balance_of(src), uint!(70u64));
+		assert_eq!(wallet.balance_of(dst), uint!(80u64));
 	}
 
 	#[test]
@@ -191,10 +191,10 @@ mod tests {
 		let src = address!("0x0000000000000000000000000000000000000001");
 		let dst = address!("0x0000000000000000000000000000000000000002");
 
-		wallet.set_balance(src, Uint::from(10u64));
-		wallet.set_balance(dst, Uint::from(50u64));
+		wallet.set_balance(src, uint!(10u64));
+		wallet.set_balance(dst, uint!(50u64));
 
-		let result = wallet.transfer(src, dst, Uint::from(20u64));
+		let result = wallet.transfer(src, dst, uint!(20u64));
 		assert_eq!(result.unwrap_err().to_string(), "insufficient funds");
 	}
 
@@ -203,9 +203,9 @@ mod tests {
 		let mut wallet = EtherWallet::new();
 		let address = address!("0x0000000000000000000000000000000000000001");
 
-		wallet.set_balance(address, Uint::from(100u64));
+		wallet.set_balance(address, uint!(100u64));
 
-		let result = wallet.transfer(address, address, Uint::from(10u64));
+		let result = wallet.transfer(address, address, uint!(10u64));
 		assert_eq!(result.unwrap_err().to_string(), "can't transfer to self");
 	}
 
@@ -214,11 +214,11 @@ mod tests {
 		let mut wallet = EtherWallet::new();
 		let address = address!("0x0000000000000000000000000000000000000001");
 
-		wallet.set_balance(address, Uint::from(100u64));
+		wallet.set_balance(address, uint!(100u64));
 
-		let encoded_withdraw = wallet.withdraw(address, Uint::from(50u64)).unwrap();
+		let encoded_withdraw = wallet.withdraw(address, uint!(50u64)).unwrap();
 
-		assert_eq!(wallet.balance_of(address), Uint::from(50u64));
+		assert_eq!(wallet.balance_of(address), uint!(50u64));
 		assert_eq!(encoded_withdraw.len(), 68);
 	}
 
@@ -227,9 +227,9 @@ mod tests {
 		let mut wallet = EtherWallet::new();
 		let address = address!("0x0000000000000000000000000000000000000001");
 
-		wallet.set_balance(address, Uint::from(10u64));
+		wallet.set_balance(address, uint!(10u64));
 
-		let result = wallet.withdraw(address, Uint::from(50u64));
+		let result = wallet.withdraw(address, uint!(50u64));
 		assert_eq!(result.unwrap_err().to_string(), "insufficient funds");
 	}
 
@@ -237,7 +237,7 @@ mod tests {
 	fn test_deposit() {
 		let mut wallet = EtherWallet::new();
 		let address = address!("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
-		let value = Uint::from(100);
+		let value = uint!(100);
 
 		let mut value_bytes = vec![0u8; 32];
 		value.to_big_endian(&mut value_bytes);
