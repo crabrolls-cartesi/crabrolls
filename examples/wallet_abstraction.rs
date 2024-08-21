@@ -33,15 +33,15 @@ enum AdvanceWithdraw {
 	},
 }
 
-pub struct SuperHoneypotApp;
+pub struct WalletAbstractionApp;
 
-impl SuperHoneypotApp {
+impl WalletAbstractionApp {
 	pub fn new() -> Self {
 		Self
 	}
 }
 
-impl Application for SuperHoneypotApp {
+impl Application for WalletAbstractionApp {
 	async fn advance(
 		&self,
 		env: &impl Environment,
@@ -221,7 +221,7 @@ impl Application for SuperHoneypotApp {
 
 #[async_std::main]
 async fn main() {
-	let app = SuperHoneypotApp::new();
+	let app = WalletAbstractionApp::new();
 	let options = RunOptions::default();
 	if let Err(e) = Supervisor::run(app, options).await {
 		eprintln!("Error: {}", e);
@@ -235,7 +235,7 @@ mod tests {
 
 	#[async_std::test]
 	async fn test_ether_deposit_and_withdrawal() {
-		let app = SuperHoneypotApp::new();
+		let app = WalletAbstractionApp::new();
 		let tester = Tester::new(app, MockupOptions::default());
 
 		let address = Address::default();
@@ -266,7 +266,7 @@ mod tests {
 
 	#[async_std::test]
 	async fn test_erc20_deposit_and_withdrawal() {
-		let app = SuperHoneypotApp::new();
+		let app = WalletAbstractionApp::new();
 		let tester = Tester::new(app, MockupOptions::default());
 
 		let address = Address::default();
@@ -301,7 +301,7 @@ mod tests {
 
 	#[async_std::test]
 	async fn test_erc721_deposit_and_withdrawal() {
-		let app = SuperHoneypotApp::new();
+		let app = WalletAbstractionApp::new();
 		let tester = Tester::new(app, MockupOptions::default());
 
 		let address = Address::default();
@@ -336,7 +336,7 @@ mod tests {
 
 	#[async_std::test]
 	async fn test_erc1155_deposit_and_withdrawal() {
-		let app = SuperHoneypotApp::new();
+		let app = WalletAbstractionApp::new();
 		let tester = Tester::new(app, MockupOptions::default());
 
 		let address = Address::default();
@@ -377,7 +377,7 @@ mod tests {
 
 	#[async_std::test]
 	async fn test_inspect_ether_balance() {
-		let app = SuperHoneypotApp::new();
+		let app = WalletAbstractionApp::new();
 		let tester = Tester::new(app, MockupOptions::default());
 
 		let address = Address::default();
@@ -411,7 +411,7 @@ mod tests {
 
 	#[async_std::test]
 	async fn test_inspect_erc20_balance() {
-		let app = SuperHoneypotApp::new();
+		let app = WalletAbstractionApp::new();
 		let tester = Tester::new(app, MockupOptions::default());
 
 		let address = Address::default();
@@ -448,7 +448,7 @@ mod tests {
 
 	#[async_std::test]
 	async fn test_inspect_erc721_owner() {
-		let app = SuperHoneypotApp::new();
+		let app = WalletAbstractionApp::new();
 		let tester = Tester::new(app, MockupOptions::default());
 
 		let address = Address::default();
@@ -485,7 +485,7 @@ mod tests {
 
 	#[async_std::test]
 	async fn test_inspect_erc1155_balance() {
-		let app = SuperHoneypotApp::new();
+		let app = WalletAbstractionApp::new();
 		let tester = Tester::new(app, MockupOptions::default());
 
 		let address = Address::default();

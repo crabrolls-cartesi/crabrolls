@@ -228,7 +228,7 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
 When working with deposits in CrabRolls, you can test various scenarios involving Ether, ERC20, ERC721, and ERC1155 tokens. Below is a guide on setting up and writing unit tests for deposit and withdrawal operations within your dApp, specifically focusing on these types of assets.
 
-The following steps illustrate how to write and execute tests for handling deposits (Ether, ERC20, ERC721, and ERC1155) and their corresponding functions, is be used the [Super Honeypot](../../getting-started/examples/super-honeypot) as base application.
+The following steps illustrate how to write and execute tests for handling deposits (Ether, ERC20, ERC721, and ERC1155) and their corresponding functions, is be used the [WalletAbstractionApp](../../getting-started/examples/wallet-abstraction) as base application.
 
 ### Make deposit
 
@@ -269,7 +269,7 @@ Example usage on a test case:
 ```rust
 #[async_std::test]
 async fn test_ether_deposit() {
-    let app = SuperHoneypotApp::new();
+    let app = WalletAbstractionApp::new();
     let tester = Tester::new(app, MockupOptions::default());
 
     let address = Address::default();
@@ -308,7 +308,7 @@ Example usage on a test case:
 ```rust
 #[async_std::test]
 async fn test_ether() {
-    let app = SuperHoneypotApp::new();
+    let app = WalletAbstractionApp::new();
     let tester = Tester::new(app, MockupOptions::default());
 
     let address = Address::default();
@@ -370,7 +370,7 @@ Example usage on a test case:
 ```rust
 #[async_std::test]
 async fn test_erc20() {
-    let app = SuperHoneypotApp::new();
+    let app = WalletAbstractionApp::new();
     let tester = Tester::new(app, MockupOptions::default());
 
     let address = Address::default();
@@ -437,7 +437,7 @@ Example usage on a test case:
 ```rust
 #[async_std::test]
 async fn test_erc721() {
-    let app = SuperHoneypotApp::new();
+    let app = WalletAbstractionApp::new();
     let tester = Tester::new(app, MockupOptions::default());
 
     let address = Address::default();
@@ -505,7 +505,7 @@ Example usage on a test case:
 ```rust
 #[async_std::test]
 async fn test_erc1155() {
-    let app = SuperHoneypotApp::new();
+    let app = WalletAbstractionApp::new();
     let tester = Tester::new(app, MockupOptions::default());
 
     let address = Address::default();
